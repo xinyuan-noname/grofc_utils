@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build:type": "tsc -p tsconfig.json",
+    "generate:exports": "node generate.exports.js",
+    "dev": "nodemon --watch src --ext js --exec \"npm run build:type & npm run generate:exports\""
   },
   "types": "./types/index.d.ts",
   "exports": {
@@ -16,13 +18,13 @@
       "import": "./src/array.js",
       "types": "./types/src/array.d.ts"
     },
-    "./string": {
-      "import": "./src/string.js",
-      "types": "./types/src/string.d.ts"
-    },
     "./missingData": {
       "import": "./src/missingData.js",
       "types": "./types/src/missingData.d.ts"
+    },
+    "./string": {
+      "import": "./src/string.js",
+      "types": "./types/src/string.d.ts"
     }
   },
   "keywords": [],

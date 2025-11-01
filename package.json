@@ -4,9 +4,27 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p tsconfig.json"
   },
   "types": "./types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./types/index.d.ts"
+    },
+    "./array": {
+      "import": "./src/array.js",
+      "types": "./types/src/array.d.ts"
+    },
+    "./string": {
+      "import": "./src/string.js",
+      "types": "./types/src/string.d.ts"
+    },
+    "./missingData": {
+      "import": "./src/missingData.js",
+      "types": "./types/src/missingData.d.ts"
+    }
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

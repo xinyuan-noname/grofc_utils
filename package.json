@@ -6,7 +6,7 @@
   "scripts": {
     "build:type": "tsc -p tsconfig.json",
     "generate:exports": "node generate.exports.js",
-    "dev": "nodemon --watch src --ext js --exec \"npm run build:type & npm run generate:exports\""
+    "dev": "nodemon --watch src --exec \"npm run build:type & npm run generate:exports\""
   },
   "types": "./types/index.d.ts",
   "exports": {

@@ -18,6 +18,10 @@
       "import": "./src/array.js",
       "types": "./types/src/array.d.ts"
     },
+    "./guard": {
+      "import": "./src/guard.js",
+      "types": "./types/src/guard.d.ts"
+    },
     "./missingData": {
       "import": "./src/missingData.js",
       "types": "./types/src/missingData.d.ts"

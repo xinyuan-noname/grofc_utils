@@ -1,3 +1,5 @@
+import { throwIfIsInvalidValue, throwIfIsNotFiniteNumber, throwIfIsNotIterable, throwIfIsNotNonNegativeFiniteNumber, throwIfIsNotNonNegativeInteger, throwIfIsNotPositiveFiniteNumber, throwIfIsNotPositiveInteger } from "./guard.js";
+
 /**
  * 本函数用于生成指定范围内的随机整数。包含边界。
  * @param {number} a 
@@ -13,18 +15,14 @@ export function randomInt(a, b) {
 
 /**
  * 本函数用于生成指定范围内的随机整数数组。
- * @param {Iterable<number>} range 
  * @param {number} len 
+ * @param {Iterable<number>} range 默认为[0,100]
  * @returns {number[]} 每个元素属于[min,max]
  */
-export function randomInts(range, len = 0) {
-    if (!Number.isInteger(len) || len < 0) throw new TypeError("len must be a non-negative integer.");
-    let a, b;
-    try {
-        [a, b] = range
-    } catch (err) {
-        throw new TypeError("range must be iterable.")
-    }
+export function randomInts(len, range = [0, 100]) {
+    throwIfIsNotNonNegativeInteger(len, "len");
+    throwIfIsNotIterable(range, "range");
+    const [a, b] = range;
     return Array.from({ length: len }, () => randomInt(a, b));
 }
 /**
@@ -41,18 +39,14 @@ export function randomFloat(a, b) {
 }
 /**
  * 本函数用于生成指定范围内的随机实数数组。
- * @param {Iterable<number>} range 
  * @param {number} len 
+ * @param {Iterable<number>} range 默认为[0,1]
  * @returns {number[]} 每个元素属于[min,max)
  */
-export function randomFloats(range, len = 0) {
-    if (!Number.isInteger(len) || len < 0) throw new TypeError("len must be a non-negative integer.");
-    let a, b
-    try {
-        [a, b] = range
-    } catch (err) {
-        throw new TypeError("range must be iterable.")
-    }
+export function randomFloats(len, range = [0, 1]) {
+    throwIfIsNotNonNegativeInteger(len, "len");
+    throwIfIsNotIterable(range, "range");
+    const [a, b] = range;
     return Array.from({ length: len }, () => randomFloat(a, b));
 }
 /**
@@ -72,7 +66,7 @@ export function randomGaussian() {
  * @returns 
  */
 export function randomGaussians(len, generator = randomGaussian) {
-    if (!Number.isInteger(len) || len < 0) throw new TypeError("len must be a non-negative integer.");
+    throwIfIsNotNonNegativeInteger(len, "len");
     return Array.from({ length: len }, () => generator());
 }
 /**
@@ -83,9 +77,8 @@ export function randomGaussians(len, generator = randomGaussian) {
  * @returns 
  */
 export function randomNormal(mu = 0, sigma = 1, generator = randomGaussian) {
-    if (typeof mu !== 'number' || typeof sigma !== 'number' || Number.isNaN(mu) || Number.isNaN(sigma) || sigma <= 0) {
-        throw new TypeError("mu must be a number and sigma must be a positive number.");
-    }
+    throwIfIsNotFiniteNumber(mu, "mu");
+    throwIfIsNotPositiveFiniteNumber(sigma, "sigma");
     return mu + sigma * generator();
 }
 /**
@@ -97,7 +90,7 @@ export function randomNormal(mu = 0, sigma = 1, generator = randomGaussian) {
  * @returns {number[]}
  */
 export function randomNormals(len, mu = 0, sigma = 1, generator = randomGaussian) {
-    if (!Number.isInteger(len) || len < 0) throw new TypeError("len must be a non-negative integer.");
+    throwIfIsNotNonNegativeInteger(len, "len");
     return Array.from({ length: len }, () => randomNormal(mu, sigma, generator));
 }
 /**
@@ -108,16 +101,24 @@ export function randomNormals(len, mu = 0, sigma = 1, generator = randomGaussian
  * @returns {number[]}
  */
 export function randomVector(dim, mod, generator = randomGaussian) {
-    if (!Number.isInteger(dim) || dim <= 0) throw new TypeError("dim must be a positive integer.");
-    if (typeof mod !== 'number' || Number.isNaN(mod) || mod <= 0) throw new TypeError("mod must be a positive number.");
+    throwIfIsNotPositiveFiniteNumber(dim, "dim");
+    throwIfIsNotNonNegativeFiniteNumber(mod, "mod");
+    if (mod === 0) return Array.from({ length: dim }, () => 0);
     const vec = Array.from({ length: dim }, () => generator());
-    const length = Math.hypot(...vec);
+    const length = Math.sqrt(vec.reduce((acc, val) => acc + val * val, 0));
+    if (length === 0) return randomVector(dim, mod, generator);
     return vec.map(v => v / length * mod);
 }
 /**
  * 传入高斯随机数生成器，并生成对应的函数对象
  * @param {()=>number} generator 
- * @returns {}
+ * @returns {{
+ *  randomGaussian: ()=>number,
+ *  randomGaussians: (len:number)=>number[],
+ *  randomNormal: (mu:number,sigma:number)=>number,
+ *  randomNormals: (len:number,mu:number,sigma:number)=>number[],
+ *  randomVector: (dim:number,mod:number)=>number[]
+ * }}
  */
 export function withGaussianGenerator(generator) {
     if (typeof generator !== "function") throw TypeError("generator must be a function that returns a standard normal random number.")
@@ -130,12 +131,12 @@ export function withGaussianGenerator(generator) {
     }
 }
 /**
- * 
+ * @template T
  * @param {Iterable<T>} inputFlow 
  * @returns {T[]}
  */
 export function randomSort(inputFlow) {
-    if (typeof inputFlow?.[Symbol.iterator] !== 'function') throw new TypeError("inputFlow must be an iterable.");
+    throwIfIsNotIterable(inputFlow, "inputFlow");
     const result = Array.from(inputFlow);
     let lastIndex = result.length - 1;
     while (lastIndex > 0) {
@@ -157,7 +158,7 @@ export const shuffle = randomSort;
  * @returns {T}
  */
 export function randomPick(inputFlow) {
-    if (typeof inputFlow?.[Symbol.iterator] !== 'function') throw new TypeError("inputFlow must be an iterable.");
+    throwIfIsNotIterable(inputFlow, "inputFlow");
     const dataList = Array.from(inputFlow);
     return dataList[randomInt(0, dataList.length - 1)]
 }
@@ -169,8 +170,8 @@ export function randomPick(inputFlow) {
  * @param {number} len 
  * @returns {T[]}
  */
-export function randomPicks(inputList, len = 0) {
-    if (!Number.isInteger(len) || len < 0) throw new TypeError("len must be a non-negative integer.");
+export function randomPicks(inputList, len) {
+    throwIfIsNotNonNegativeInteger(len, "len");
     if (typeof inputList?.[Symbol.iterator] !== 'function') throw new TypeError("inputList must be an iterable.");
     const dataList = Array.from(inputList);
     return dataList.length ? Array.from({ length: len }, () => dataList[randomInt(0, dataList.length - 1)]) :
@@ -183,8 +184,8 @@ export function randomPicks(inputList, len = 0) {
  * @returns {T}
  */
 export function randomChoice(inputMap) {
+    throwIfIsInvalidValue(inputMap, "inputMap");
     if (!(inputMap instanceof Map)) {
-        if (inputMap == null) throw new TypeError("inputMap must be a Map or can be seen as a object.");
         inputMap = new Map(Object.entries(inputMap));
     }
     const samples = [];
@@ -224,10 +225,10 @@ export function randomChoice(inputMap) {
  * @param {number} len 
  * @returns {T[]}
  */
-export function randomChoices(inputMap, len = 0) {
-    if (!Number.isInteger(len) || len < 0) throw new TypeError("len must be a non-negative integer.");
+export function randomChoices(inputMap, len) {
+    throwIfIsNotNonNegativeInteger(len, "len");
+    throwIfIsInvalidValue(inputMap, "inputMap");
     if (!(inputMap instanceof Map)) {
-        if (inputMap == null) throw new TypeError("inputMap must be a Map or can be seen as a object.");
         inputMap = new Map(Object.entries(inputMap));
     }
     const samples = [];
@@ -271,9 +272,9 @@ export function randomChoices(inputMap, len = 0) {
  * @param {number} len 
  * @returns {T[]}
  */
-export function randomSample(inputFlow, len = 0) {
-    if (!Number.isInteger(len) || len < 0) throw new TypeError("len must be a non-negative integer.");
-    if (typeof inputFlow?.[Symbol.iterator] !== 'function') throw new TypeError("inputFlow must be an iterable.");
+export function randomSample(inputFlow, len) {
+    throwIfIsNotNonNegativeInteger(len, "len");
+    throwIfIsNotIterable(inputFlow, "inputFlow");
     const result = [];
     let index = 0;
     for (const input of inputFlow) {

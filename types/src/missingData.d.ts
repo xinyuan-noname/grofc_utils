@@ -23,8 +23,11 @@
  *
  * @example
  * forwardFill("abc",{len:2}) //=> ["abc", "abc"]
+ * forwardFill(new String("abc")) // => ["a", "b", "c"]
  * forwardFill([1, undefined, 3], { len: 5 }) // => [1, 1, 3, 3, 3]
  * forwardFill(null, { len: 2, invalidityChecker: null, defaultValue: 0 }) // => [0, 0]
+ * forwardFill(new Map([[1,2],['a',2]])) // => [[1,2],['a',2]]
+ * const obj = {};forwardFill(obj,{len:2}) // => [obj, obj]
  */
 export function forwardFill<T>(inputData: T | Iterable<T>, options?: {
     len?: number;

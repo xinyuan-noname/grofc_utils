@@ -22,6 +22,10 @@
       "import": "./src/missingData.js",
       "types": "./types/src/missingData.d.ts"
     },
+    "./random": {
+      "import": "./src/random.js",
+      "types": "./types/src/random.d.ts"
+    },
     "./string": {
       "import": "./src/string.js",
       "types": "./types/src/string.d.ts"
@@ -30,5 +34,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "vitest": "^4.0.6"
+  }
 }

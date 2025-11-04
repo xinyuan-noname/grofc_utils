@@ -5,7 +5,8 @@ import {
     throwIfIsNotNonNegativeFiniteNumber,
     throwIfIsNotPositiveFiniteNumber,
     throwIfIsNotNonNegativeInteger,
-    throwIfIsNotNonNegativeIntegerArray
+    throwIfIsNotNonNegativeIntegerArray,
+    throwIfIsNotFunction
 } from "./guard.js";
 
 /**
@@ -77,6 +78,7 @@ export function randomGaussian() {
  */
 export function randomGaussians(len, generator = randomGaussian) {
     throwIfIsNotNonNegativeInteger(len, "len");
+    throwIfIsNotFunction(generator, "generator");
     return Array.from({ length: len }, () => generator());
 }
 /**
@@ -89,6 +91,7 @@ export function randomGaussians(len, generator = randomGaussian) {
 export function randomNormal(mu = 0, sigma = 1, generator = randomGaussian) {
     throwIfIsNotFiniteNumber(mu, "mu");
     throwIfIsNotPositiveFiniteNumber(sigma, "sigma");
+    throwIfIsNotFunction(generator, "generator");
     return mu + sigma * generator();
 }
 /**
@@ -113,11 +116,20 @@ export function randomNormals(len, mu = 0, sigma = 1, generator = randomGaussian
 export function randomVector(dim = 2, mod = 1, generator = randomGaussian) {
     throwIfIsNotPositiveFiniteNumber(dim, "dim");
     throwIfIsNotNonNegativeFiniteNumber(mod, "mod");
+    throwIfIsNotFunction(generator, "generator");
     if (mod === 0) return Array.from({ length: dim }, () => 0);
-    const vec = Array.from({ length: dim }, () => generator());
-    const length = Math.sqrt(vec.reduce((acc, val) => acc + val * val, 0));
-    if (length === 0) return randomVector(dim, mod, generator);
-    return vec.map(v => v / length * mod);
+    const MAX_ATTEMPTS = 10, EPSILON_SQ = 1e-24;
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        const vec = Array.from({ length: dim }, () => generator());
+        const squaredLength = vec.reduce((acc, val) => acc + val * val, 0);
+        if (squaredLength > EPSILON_SQ) {
+            const length = Math.sqrt(squaredLength);
+            return vec.map(v => v / length * mod);
+        }
+    }
+    throw new Error(
+        `Failed to generate non-zero random vector after ${MAX_ATTEMPTS} attempts. Check your generator function.`
+    )
 }
 /**
  * 生成指定数量的随机向量数组
@@ -142,6 +154,7 @@ export function randomVectors(len, dim = 2, mod = 1, generator = randomGaussian)
 export function randomMatrix(rows = 2, cols = rows, generator = (_r, _c) => randomInt(0, 10)) {
     throwIfIsNotNonNegativeInteger(rows, "rows");
     throwIfIsNotNonNegativeInteger(cols, "cols");
+    throwIfIsNotFunction(generator, "generator");
     return Array.from({ length: rows }, (_v, r) => Array.from({ length: cols }, (_w, c) => generator(r, c)));
 }
 
@@ -153,7 +166,7 @@ export function randomMatrix(rows = 2, cols = rows, generator = (_r, _c) => rand
  * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数，默认生成0-10的随机整数
  * @returns {number[][][]} 包含len个矩阵的数组，每个矩阵都是二维数组
  */
-export function randomMatrices(len, rows, cols = rows, generator = (_r, _c) => randomInt(0, 10)) {
+export function randomMatrices(len, rows = 2, cols = rows, generator = (_r, _c) => randomInt(0, 10)) {
     throwIfIsNotNonNegativeInteger(len, "len");
     return Array.from({ length: len }, () => randomMatrix(rows, cols, generator))
 }
@@ -260,7 +273,7 @@ export function randomChoice(inputMap) {
         samples.push(k);
         weights.push(Number(v));
     }
-    throwIfIsNotNonNegativeIntegerArray(weights, "weights")
+    throwIfIsNotNonNegativeIntegerArray(weights, "weights", "all weights")
     const cum_weights = weights.slice();
     for (let i = 1; i < cum_weights.length; i++) {
         cum_weights[i] += cum_weights[i - 1];
@@ -301,7 +314,7 @@ export function randomChoices(inputMap, len) {
         samples.push(k);
         weights.push(Number(v));
     }
-    throwIfIsNotNonNegativeIntegerArray(weights, "weights")
+    throwIfIsNotNonNegativeIntegerArray(weights, "weights", "all weights")
     const cum_weights = weights.slice();
     for (let i = 1; i < cum_weights.length; i++) {
         cum_weights[i] += cum_weights[i - 1];

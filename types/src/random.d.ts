@@ -88,7 +88,7 @@ export function randomMatrix(rows?: number, cols?: number, generator?: (r: numbe
  * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数，默认生成0-10的随机整数
  * @returns {number[][][]} 包含len个矩阵的数组，每个矩阵都是二维数组
  */
-export function randomMatrices(len: number, rows: number, cols?: number, generator?: (r: number, c: number) => number): number[][][];
+export function randomMatrices(len: number, rows?: number, cols?: number, generator?: (r: number, c: number) => number): number[][][];
 /**
  * 传入高斯随机数生成器，并生成对应的函数对象
  * @param {()=>number} generator

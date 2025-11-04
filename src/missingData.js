@@ -1,3 +1,5 @@
+import { throwIfIsNotNonNegativeInteger } from "./guard";
+
 /**
  * 前向填充（forward-fill）输入数据，向前填充无效值。
  *
@@ -31,8 +33,8 @@
  */
 export function forwardFill(inputData, options = { checkDefaultValue: true }) {
     if ("len" in options) {
-        if (!Number.isInteger(options.len)) throw new TypeError("options.len must be integer.")
-        if (options.len <= 0) return [];
+        throwIfIsNotNonNegativeInteger(options.len, "options.len");
+        if (options.len === 0) return [];
     }
     const result = []
     const dataList = typeof inputData === "object"

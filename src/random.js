@@ -4,7 +4,8 @@ import {
     throwIfIsNotFiniteNumber,
     throwIfIsNotNonNegativeFiniteNumber,
     throwIfIsNotPositiveFiniteNumber,
-    throwIfIsNotNonNegativeInteger
+    throwIfIsNotNonNegativeInteger,
+    throwIfIsNotNonNegativeIntegerArray
 } from "./guard.js";
 
 /**
@@ -259,9 +260,7 @@ export function randomChoice(inputMap) {
         samples.push(k);
         weights.push(Number(v));
     }
-    if (weights.some(w => w < 0 || Number.isNaN(w))) {
-        throw new TypeError("All weights must be non-negative numbers.");
-    }
+    throwIfIsNotNonNegativeIntegerArray(weights, "weights")
     const cum_weights = weights.slice();
     for (let i = 1; i < cum_weights.length; i++) {
         cum_weights[i] += cum_weights[i - 1];
@@ -302,9 +301,7 @@ export function randomChoices(inputMap, len) {
         samples.push(k);
         weights.push(Number(v));
     }
-    if (weights.some(w => w < 0 || Number.isNaN(w))) {
-        throw new TypeError("All weights must be non-negative numbers.");
-    }
+    throwIfIsNotNonNegativeIntegerArray(weights, "weights")
     const cum_weights = weights.slice();
     for (let i = 1; i < cum_weights.length; i++) {
         cum_weights[i] += cum_weights[i - 1];

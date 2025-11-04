@@ -30,6 +30,7 @@ const safeGuardExecute = (guardFunc, ...args) => {
         throw new GuardError(err);
     }
 }
+
 const throwTypeErrorGiveType = (variable, name = "variable", ...acceptableTypes) => {
     if (acceptableTypes.length === 1) throw TypeError(`Expected ${name} to be ${acceptableTypes}, but got ${getType(variable)}.`)
     else if (acceptableTypes.length > 1) throw TypeError(`Expected ${name} to be ${acceptableTypes.slice(0, -1).join(" ,")} or ${acceptableTypes[acceptableTypes.length - 1]}, but got ${getType(variable)}.`)
@@ -37,6 +38,9 @@ const throwTypeErrorGiveType = (variable, name = "variable", ...acceptableTypes)
 const throwTypeErrorGiveValue = (variable, name = "variable", ...acceptableValues) => {
     if (acceptableValues.length === 1) throw TypeError(`Expected ${name} to be ${acceptableValues}, but got ${variable}.`)
     else if (acceptableValues.length > 1) throw TypeError(`Expected ${name} to be ${acceptableValues.slice(0, -1).join(" ,")} or ${acceptableValues[acceptableValues.length - 1]}, but got ${variable}.`)
+}
+const throwTypeErrorForArray = (name = "variable", acceptableType, unexpected,) => {
+    throw TypeError(`Expected all elements of ${name} to be ${acceptableType}, but found ${unexpected}.`)
 }
 const throwRangeErrorGiveValue = (variable, name = "variable", ...acceptableRanges) => {
     if (acceptableRanges.length === 1) throw RangeError(`Expected ${name} to be ${acceptableRanges}, but got ${variable}.`)
@@ -105,7 +109,7 @@ export function throwIfIsNotNumber(variable, name = "variable") {
  */
 export function throwIfIsNotFiniteNumber(variable, name = "variable") {
     throwIfIsNotNumber(variable, name)
-    if (!Number.isFinite(variable) || Number.isNaN(variable)) {
+    if (!Number.isFinite(variable)) {
         throwTypeErrorGiveValue(variable, name, "a finite number")
     }
 }
@@ -253,6 +257,10 @@ export function throwIfSomeKeysMissing(variable, keys, name = "variable") {
         throw new Error(`Expected ${name} to have at all attributes of [${keys.map(k => `'${k}'`).join(" ,")}], but missing [${l.map(k => `'${k}'`).join(" ,")}].`)
     }
 }
+
+// ------------------------------------------------
+// 可迭代守卫函数
+// ------------------------------------------------
 /**
  * 检查变量是否为可迭代对象或字符串
  * @param {*} variable - 要检查的变量
@@ -273,5 +281,239 @@ export function throwIfIsNotIterable(variable, name = "variable") {
 export function throwIfIsNotIterableObject(variable, name = "") {
     if (typeof variable !== 'object' || variable === null || typeof variable[Symbol.iterator] !== 'function') {
         throwTypeErrorGiveType(variable, name, "an iterable object");
+    }
+}
+
+//------------------------------------------------
+// 数组类型守卫函数
+// ------------------------------------------------
+export function throwIfIsNotArray(variable, name = "variable") {
+    if (!Array.isArray(variable)) {
+        throwTypeErrorGiveType(variable, name, "an array");
+    }
+}
+export function throwIfIsNotNonEmptyArray(variable, name = "variable") {
+    throwIfIsNotArray(variable, name);
+    if (variable.length === 0) {
+        throwRangeErrorGiveValue(variable, name, "a non-empty array");
+    }
+}
+
+
+/**
+ * 校验变量是否为仅包含有限数（有限 number）的数组。
+ * @param {*} variable - 待校验的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
+ * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、-Infinity
+ */
+export function throwIfIsNotFiniteNumberArray(variable, name = "variable") {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "finite numbers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(name, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (isNaN(e)) {
+            throwTypeErrorForArray(name, acceptType, "NaN");
+        }
+        if (!Number.isFinite(e)) {
+            const desc = e > 0 ? "Infinity" : "-Infinity";
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+    }
+}
+/**
+ * 校验变量是否为仅包含正有限数（> 0 的有限 number）的数组。
+ * @param {*} variable - 待校验的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
+ * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、零
+ */
+export function throwIfIsNotPositiveFiniteNumberArray(variable, name = "variable") {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "positive finite numbers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(name, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (isNaN(e)) {
+            throwTypeErrorForArray(name, acceptType, "NaN");
+        }
+        if (!Number.isFinite(e)) {
+            const desc = e > 0 ? "Infinity" : "-Infinity";
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+        if (e <= 0) {
+            const desc = e === 0 ? "zero" : `a negative number (${e})`;
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+    }
+}
+/**
+ * 校验变量是否为仅包含非负有限数（>= 0 的有限 number）的数组。
+ * @param {*} variable - 待校验的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
+ * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数
+ */
+export function throwIfIsNotNonNegativeFiniteNumberArray(variable, name = "variable") {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "non-negative finite numbers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(name, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (isNaN(e)) {
+            throwTypeErrorForArray(name, acceptType, "NaN");
+        }
+        if (!Number.isFinite(e)) {
+            const desc = e > 0 ? "Infinity" : "-Infinity";
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+        if (e < 0) {
+            const desc = `a negative number (${e})`;
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+    }
+}
+
+/**
+ * 校验变量是否为仅包含负有限数（< 0 的有限 number）的数组。
+ * @param {*} variable - 待校验的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
+ * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、正数、零
+ */
+export function throwIfIsNotNegativeFiniteNumberArray(variable, name = "variable") {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "negative finite numbers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(name, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (isNaN(e)) {
+            throwTypeErrorForArray(name, acceptType, "NaN");
+        }
+        if (!Number.isFinite(e)) {
+            const desc = e > 0 ? "Infinity" : "-Infinity";
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+        if (e >= 0) {
+            const desc = e === 0 ? "zero" : `a positive number (${e})`;
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+    }
+}
+
+/**
+ * 校验变量是否为仅包含整数的数组。
+ * @param {*} variable - 待校验的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
+ * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、小数
+ */
+export function throwIfIsNotIntegerArray(variable, name = "variable") {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "integers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(name, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (isNaN(e)) {
+            throwTypeErrorForArray(name, acceptType, "NaN");
+        }
+        if (!Number.isFinite(e)) {
+            const desc = e > 0 ? "Infinity" : "-Infinity";
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+        if (!Number.isInteger(e)) {
+            throwTypeErrorForArray(name, acceptType, `a non-integer value (${e})`);
+        }
+    }
+}
+
+/**
+ * 校验变量是否为仅包含正整数（> 0 的整数）的数组。
+ * @param {*} variable - 待校验的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
+ * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、零、小数
+ */
+export function throwIfIsNotPositiveIntegerArray(variable, name = "variable") {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "positive integers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(name, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (isNaN(e)) {
+            throwTypeErrorForArray(name, acceptType, "NaN");
+        }
+        if (!Number.isFinite(e)) {
+            const desc = e > 0 ? "Infinity" : "-Infinity";
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+        if (!Number.isInteger(e)) {
+            throwTypeErrorForArray(name, acceptType, `a non-integer value (${e})`);
+        }
+        if (e <= 0) {
+            const desc = e === 0 ? "zero" : `a negative number (${e})`;
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+    }
+}
+
+/**
+ * 校验变量是否为仅包含非负整数（>= 0 的整数）的数组。
+ * @param {*} variable - 待校验的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
+ * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、小数
+ */
+export function throwIfIsNotNonNegativeIntegerArray(variable, name = "variable") {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "non-negative integers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(name, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (isNaN(e)) {
+            throwTypeErrorForArray(name, acceptType, "NaN");
+        }
+        if (!Number.isFinite(e)) {
+            const desc = e > 0 ? "Infinity" : "-Infinity";
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+        if (!Number.isInteger(e)) {
+            throwTypeErrorForArray(name, acceptType, `a non-integer value (${e})`);
+        }
+        if (e < 0) {
+            const desc = `a negative number (${e})`;
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+    }
+}
+
+/**
+ * 校验变量是否为仅包含负整数（< 0 的整数）的数组。
+ * @param {*} variable - 待校验的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
+ * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、正数、零、小数
+ */
+export function throwIfIsNotNegativeIntegerArray(variable, name = "variable") {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "negative integers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(name, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (isNaN(e)) {
+            throwTypeErrorForArray(name, acceptType, "NaN");
+        }
+        if (!Number.isFinite(e)) {
+            const desc = e > 0 ? "Infinity" : "-Infinity";
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
+        if (!Number.isInteger(e)) {
+            throwTypeErrorForArray(name, acceptType, `a non-integer value (${e})`);
+        }
+        if (e >= 0) {
+            const desc = e === 0 ? "zero" : `a positive number (${e})`;
+            throwTypeErrorForArray(name, acceptType, desc);
+        }
     }
 }

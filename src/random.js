@@ -47,7 +47,7 @@ export function randomFloat(a, b) {
     return Math.random() * (r - l) + l;
 }
 /**
- * 本函数用于生成指定范围内的随机实数数组。
+ * 本函数用于生成指定范围内的随机浮点数数组。
  * @param {number} len 
  * @param {Iterable<number>} range 默认为[0,1]
  * @returns {number[]} 每个元素属于[min,max)

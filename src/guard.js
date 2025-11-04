@@ -65,7 +65,6 @@ export function throwIfArgumentsMissing(args, expectedCount) {
  */
 export function throwIfIsInvalidValue(variable, name = "variable") {
     if (variable == null) {
-        // throw new TypeError(`Expected ${name} to be not null or undefined, but got ${variable}.`)
         throwTypeErrorGiveValue(variable, name, "not null or undefined")
     }
 }
@@ -78,7 +77,6 @@ export function throwIfIsInvalidValue(variable, name = "variable") {
  */
 export function throwIfIsFalsyValue(variable, name = "variable") {
     if (!variable) {
-        // throw new TypeError(`Expected ${name} to be a truthy value, but got ${variable}.`)
         throwTypeErrorGiveValue(variable, name, "a truthy value")
     }
 }
@@ -95,7 +93,6 @@ export function throwIfIsFalsyValue(variable, name = "variable") {
  */
 export function throwIfIsNotNumber(variable, name = "variable") {
     if (typeof variable !== "number") {
-        // throw new TypeError(`Expected ${name} to be a number, but got ${getType(variable)}.`)
         throwTypeErrorGiveType(variable, name, "a number")
     }
 }
@@ -109,7 +106,6 @@ export function throwIfIsNotNumber(variable, name = "variable") {
 export function throwIfIsNotFiniteNumber(variable, name = "variable") {
     throwIfIsNotNumber(variable, name)
     if (!Number.isFinite(variable) || Number.isNaN(variable)) {
-        // throw new TypeError(`Expected ${name} to be a finite number, but got ${variable}.`)
         throwTypeErrorGiveValue(variable, name, "a finite number")
     }
 }
@@ -123,7 +119,6 @@ export function throwIfIsNotFiniteNumber(variable, name = "variable") {
 export function throwIfIsNotPositiveFiniteNumber(variable, name = "variable") {
     throwIfIsNotFiniteNumber(variable, name)
     if (variable <= 0) {
-        // throw new RangeError(`Expected ${name} to be a positive finite number, but got ${variable}.`);
         throwRangeErrorGiveValue(variable, name, "a positive finite number");
     }
 }
@@ -137,7 +132,6 @@ export function throwIfIsNotPositiveFiniteNumber(variable, name = "variable") {
 export function throwIfIsNotNegativeFiniteNumber(variable, name = "variable") {
     throwIfIsNotFiniteNumber(variable, name)
     if (variable >= 0) {
-        // throw new RangeError(`Expected ${name} to be a negative finite number, but got ${variable}.`);
         throwRangeErrorGiveValue(variable, name, "a negative finite number");
     }
 }
@@ -151,7 +145,6 @@ export function throwIfIsNotNegativeFiniteNumber(variable, name = "variable") {
 export function throwIfIsNotNonNegativeFiniteNumber(variable, name = "variable") {
     throwIfIsNotFiniteNumber(variable, name)
     if (variable < 0) {
-        // throw new RangeError(`Expected ${name} to be a non-negative finite number, but got ${variable}.`);
         throwRangeErrorGiveValue(variable, name, "a non-negative finite number");
     }
 }
@@ -165,7 +158,6 @@ export function throwIfIsNotNonNegativeFiniteNumber(variable, name = "variable")
 export function throwIfIsNotInteger(variable, name = "variable") {
     throwIfIsNotNumber(variable, name)
     if (!Number.isInteger(variable)) {
-        // throw new TypeError(`Expected ${name} to be an integer, but got ${variable}.`)
         throwTypeErrorGiveValue(variable, name, "an integer");
     }
 }
@@ -179,7 +171,6 @@ export function throwIfIsNotInteger(variable, name = "variable") {
 export function throwIfIsNotPositiveInteger(variable, name = "variable") {
     throwIfIsNotInteger(variable, name)
     if (variable <= 0) {
-        // throw new RangeError(`Expected ${name} to be a positive integer, but got ${variable}.`);
         throwRangeErrorGiveValue(variable, name, "a positive integer");
     }
 }
@@ -193,7 +184,6 @@ export function throwIfIsNotPositiveInteger(variable, name = "variable") {
 export function throwIfIsNotNegativeInteger(variable, name = "variable") {
     throwIfIsNotInteger(variable, name)
     if (variable >= 0) {
-        // throw new RangeError(`Expected ${name} to be a negative integer, but got ${variable}.`);
         throwRangeErrorGiveValue(variable, name, "a negative integer");
     }
 }
@@ -207,7 +197,6 @@ export function throwIfIsNotNegativeInteger(variable, name = "variable") {
 export function throwIfIsNotNonNegativeInteger(variable, name = "variable") {
     throwIfIsNotInteger(variable, name)
     if (variable < 0) {
-        // throw new RangeError(`Expected ${name} to be a non-negative integer, but got ${variable}.`);
         throwRangeErrorGiveValue(variable, name, "a non-negative integer");
     }
 }
@@ -222,7 +211,6 @@ export function throwIfIsNotNonNegativeInteger(variable, name = "variable") {
  */
 export function throwIfIsNotPlainObject(variable, name = "variable") {
     if (typeof variable !== 'object' || variable === null || Array.isArray(variable)) {
-        // throw new TypeError(`Expected ${name} to be a plain object, but got ${getType(variable)}.`);
         throwTypeErrorGiveType(variable, name, "a plain object");
     }
 }
@@ -239,7 +227,6 @@ export function throwIfAllKeysMissing(variable, keys, name = "variable") {
     throwIfIsNotPlainObject(variable);
     if (!Array.isArray(keys)) {
         if (typeof keys === "string") keys = [keys];
-        // throw new GuardError(new TypeError(`Expected ${name} to be string or array of string, but got ${getType(variable)}`))
         safeGuardExecute(throwTypeErrorGiveType, keys, name, "string", "an array of string");
     }
     if (keys.every(key => !(key in variable))) {
@@ -259,7 +246,6 @@ export function throwIfSomeKeysMissing(variable, keys, name = "variable") {
     throwIfIsNotPlainObject(variable);
     if (!Array.isArray(keys)) {
         if (typeof keys === "string") keys = [keys];
-        // throw new GuardError(new TypeError(`Expected ${name} to be string or array of string, but got ${getType(variable)}`))
         safeGuardExecute(throwTypeErrorGiveType, keys, name, "string", "an array of string");
     }
     const l = keys.filter(key => !(key in variable))
@@ -275,7 +261,6 @@ export function throwIfSomeKeysMissing(variable, keys, name = "variable") {
  */
 export function throwIfIsNotIterable(variable, name = "variable") {
     if (variable == null || typeof variable[Symbol.iterator] !== "function") {
-        // throw new TypeError(`Expected ${name} to be an iterable, but got ${getType(variable)}.`)
         throwTypeErrorGiveType(variable, name, "an iterable");
     }
 }
@@ -287,7 +272,6 @@ export function throwIfIsNotIterable(variable, name = "variable") {
  */
 export function throwIfIsNotIterableObject(variable, name = "") {
     if (typeof variable !== 'object' || variable === null || typeof variable[Symbol.iterator] !== 'function') {
-        // throw new TypeError(`Expected ${name} to be an iterable object, but got ${getType(variable)}.`);
         throwTypeErrorGiveType(variable, name, "an iterable object");
     }
 }

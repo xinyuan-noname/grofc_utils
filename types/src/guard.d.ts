@@ -6,14 +6,6 @@
  */
 export function throwIfArgumentsMissing(args: IArguments | any[], expectedCount: number): void;
 /**
- * 检查变量是否为可迭代对象或字符串
- * @param {*} variable - 要检查的变量
- * @param {string} name - 变量名称（用于错误消息）
- * @throws {TypeError} 当变量不是可迭代对象或字符串时抛出类型错误
- */
-export function throwIfIsNotIterable(variable: any, name?: string): void;
-export function throwIfIsNotIterableObject(variable: any, name?: string): void;
-/**
  * 检查变量是否为有效值（不为 null 或 undefined）
  * @param {*} variable - 要检查的变量
  * @param {string} name - 变量名称（用于错误消息）
@@ -90,3 +82,44 @@ export function throwIfIsNotNegativeInteger(variable: any, name?: string): void;
  * @throws {RangeError} 当变量不是非负整数时抛出范围错误
  */
 export function throwIfIsNotNonNegativeInteger(variable: any, name?: string): void;
+/**
+ * 检查变量是否为普通对象（非 null，非数组）
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当变量不是普通对象时抛出类型错误
+ */
+export function throwIfIsNotPlainObject(variable: any, name?: string): void;
+/**
+ * 检查对象是否缺少所有指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string|string[]} keys - 要检查的键名或键名数组
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
+ * @throws {GuardError} 当 keys 不是字符串或字符串数组时抛出守卫错误
+ * @throws {Error} 当对象缺少所有指定键时抛出错误
+ */
+export function throwIfAllKeysMissing(variable: any, keys: string | string[], name?: string): void;
+/**
+ * 检查对象是否缺少任意指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string|string[]} keys - 要检查的键名或键名数组
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
+ * @throws {GuardError} 当 keys 不是字符串或字符串数组时抛出守卫错误
+ * @throws {Error} 当对象缺少任何一个指定键时抛出错误
+ */
+export function throwIfSomeKeysMissing(variable: any, keys: string | string[], name?: string): void;
+/**
+ * 检查变量是否为可迭代对象或字符串
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当变量不是可迭代对象或字符串时抛出类型错误
+ */
+export function throwIfIsNotIterable(variable: any, name?: string): void;
+/**
+ * 检查变量是否为可迭代对象，如果不是则抛出类型错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当变量不是可迭代对象时抛出类型错误
+ */
+export function throwIfIsNotIterableObject(variable: any, name?: string): void;

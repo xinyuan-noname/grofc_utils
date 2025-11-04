@@ -1,4 +1,11 @@
-import { throwIfIsInvalidValue, throwIfIsNotFiniteNumber, throwIfIsNotIterable, throwIfIsNotNonNegativeFiniteNumber, throwIfIsNotNonNegativeInteger, throwIfIsNotPositiveFiniteNumber, throwIfIsNotPositiveInteger } from "./guard.js";
+import {
+    throwIfIsInvalidValue,
+    throwIfIsNotIterable,
+    throwIfIsNotFiniteNumber,
+    throwIfIsNotNonNegativeFiniteNumber,
+    throwIfIsNotPositiveFiniteNumber,
+    throwIfIsNotNonNegativeInteger
+} from "./guard.js";
 
 /**
  * 本函数用于生成指定范围内的随机整数。包含边界。
@@ -8,7 +15,8 @@ import { throwIfIsInvalidValue, throwIfIsNotFiniteNumber, throwIfIsNotIterable, 
  */
 export function randomInt(a, b) {
     a = Number(a), b = Number(b);
-    if (Number.isNaN(a) || Number.isNaN(b)) throw new TypeError(`Both arguments must be numbers. Received: a=${a}, b=${b}`);
+    throwIfIsNotFiniteNumber(a, "a");
+    throwIfIsNotFiniteNumber(b, "b");
     const [l, r] = a > b ? [b, a] : [a, b];
     return Math.floor(Math.random() * (r - l + 1)) + l;
 }
@@ -33,7 +41,8 @@ export function randomInts(len, range = [0, 100]) {
  */
 export function randomFloat(a, b) {
     a = Number(a), b = Number(b);
-    if (Number.isNaN(a) || Number.isNaN(b)) throw new TypeError(`Both arguments must be numbers. Received: a=${a}, b=${b}`);
+    throwIfIsNotFiniteNumber(a, "a");
+    throwIfIsNotFiniteNumber(b, "b");
     const [l, r] = a > b ? [b, a] : [a, b];
     return Math.random() * (r - l) + l;
 }
@@ -100,7 +109,7 @@ export function randomNormals(len, mu = 0, sigma = 1, generator = randomGaussian
  * @param {()=>number} generator 标准正态分布随机数生成器 
  * @returns {number[]}
  */
-export function randomVector(dim, mod, generator = randomGaussian) {
+export function randomVector(dim = 2, mod = 1, generator = randomGaussian) {
     throwIfIsNotPositiveFiniteNumber(dim, "dim");
     throwIfIsNotNonNegativeFiniteNumber(mod, "mod");
     if (mod === 0) return Array.from({ length: dim }, () => 0);
@@ -109,6 +118,45 @@ export function randomVector(dim, mod, generator = randomGaussian) {
     if (length === 0) return randomVector(dim, mod, generator);
     return vec.map(v => v / length * mod);
 }
+/**
+ * 生成指定数量的随机向量数组
+ * @param {number} len 需要生成的向量数量
+ * @param {number} dim 向量的维度，默认为2
+ * @param {number} mod 向量的模长，默认为1
+ * @param {()=>number} generator 随机数生成器函数，默认为randomGaussian
+ * @returns {number[][]} 包含len个随机向量的数组，每个向量都是指定维度和模长的数组
+ */
+export function randomVectors(len, dim = 2, mod = 1, generator = randomGaussian) {
+    throwIfIsNotNonNegativeInteger(len, "len");
+    return Array.from({ length: len }, () => randomVector(dim, mod, generator));
+}
+
+/**
+ * 生成一个指定行列数的随机矩阵
+ * @param {number} rows 矩阵的行数，默认为2
+ * @param {number} cols 矩阵的列数，默认等于行数
+ * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数，默认生成0-10的随机整数
+ * @returns {number[][]} 二维数组表示的矩阵，大小为rows×cols
+ */
+export function randomMatrix(rows = 2, cols = rows, generator = (_r, _c) => randomInt(0, 10)) {
+    throwIfIsNotNonNegativeInteger(rows, "rows");
+    throwIfIsNotNonNegativeInteger(cols, "cols");
+    return Array.from({ length: rows }, (_v, r) => Array.from({ length: cols }, (_w, c) => generator(r, c)));
+}
+
+/**
+ * 生成指定数量的随机矩阵数组
+ * @param {number} len 需要生成的矩阵数量
+ * @param {number} rows 每个矩阵的行数
+ * @param {number} cols 每个矩阵的列数，默认等于行数
+ * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数，默认生成0-10的随机整数
+ * @returns {number[][][]} 包含len个矩阵的数组，每个矩阵都是二维数组
+ */
+export function randomMatrices(len, rows, cols = rows, generator = (_r, _c) => randomInt(0, 10)) {
+    throwIfIsNotNonNegativeInteger(len, "len");
+    return Array.from({ length: len }, () => randomMatrix(rows, cols, generator))
+}
+
 /**
  * 传入高斯随机数生成器，并生成对应的函数对象
  * @param {()=>number} generator 
@@ -127,9 +175,26 @@ export function withGaussianGenerator(generator) {
         randomGaussians: (len) => randomGaussians(len, generator),
         randomNormal: (mu, sigma) => randomNormal(mu, sigma, generator),
         randomNormals: (len, mu, sigma) => randomNormals(len, mu, sigma, generator),
-        randomVector: (dim, mod) => randomVector(dim, mod, generator)
+        randomVector: (dim, mod) => randomVector(dim, mod, generator),
+        randomVectors: (len, dim, mod) => randomVectors(len, dim, mod, generator)
     }
 }
+
+/**
+ * 传入矩阵元素生成器，并生成对应的矩阵操作函数对象
+ * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数
+ * @returns {{ 
+ *   randomMatrix: (rows: number, cols: number) => number[][],
+ *   randomMatrices: (len: number, rows: number, cols: number) => number[][][] 
+ * }} 返回包含随机矩阵生成函数的对象
+ */
+export function withMatrixGenerator(generator) {
+    return {
+        randomMatrix: (rows, cols) => randomMatrix(rows, cols, generator),
+        randomMatrices: (len, rows, cols) => randomMatrices(len, rows, cols, generator)
+    }
+}
+
 /**
  * @template T
  * @param {Iterable<T>} inputFlow 

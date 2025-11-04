@@ -62,7 +62,33 @@ export function randomNormals(len: number, mu?: number, sigma?: number, generato
  * @param {()=>number} generator 标准正态分布随机数生成器
  * @returns {number[]}
  */
-export function randomVector(dim: number, mod: number, generator?: () => number): number[];
+export function randomVector(dim?: number, mod?: number, generator?: () => number): number[];
+/**
+ * 生成指定数量的随机向量数组
+ * @param {number} len 需要生成的向量数量
+ * @param {number} dim 向量的维度，默认为2
+ * @param {number} mod 向量的模长，默认为1
+ * @param {()=>number} generator 随机数生成器函数，默认为randomGaussian
+ * @returns {number[][]} 包含len个随机向量的数组，每个向量都是指定维度和模长的数组
+ */
+export function randomVectors(len: number, dim?: number, mod?: number, generator?: () => number): number[][];
+/**
+ * 生成一个指定行列数的随机矩阵
+ * @param {number} rows 矩阵的行数，默认为2
+ * @param {number} cols 矩阵的列数，默认等于行数
+ * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数，默认生成0-10的随机整数
+ * @returns {number[][]} 二维数组表示的矩阵，大小为rows×cols
+ */
+export function randomMatrix(rows?: number, cols?: number, generator?: (r: number, c: number) => number): number[][];
+/**
+ * 生成指定数量的随机矩阵数组
+ * @param {number} len 需要生成的矩阵数量
+ * @param {number} rows 每个矩阵的行数
+ * @param {number} cols 每个矩阵的列数，默认等于行数
+ * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数，默认生成0-10的随机整数
+ * @returns {number[][][]} 包含len个矩阵的数组，每个矩阵都是二维数组
+ */
+export function randomMatrices(len: number, rows: number, cols?: number, generator?: (r: number, c: number) => number): number[][][];
 /**
  * 传入高斯随机数生成器，并生成对应的函数对象
  * @param {()=>number} generator
@@ -80,6 +106,18 @@ export function withGaussianGenerator(generator: () => number): {
     randomNormal: (mu: number, sigma: number) => number;
     randomNormals: (len: number, mu: number, sigma: number) => number[];
     randomVector: (dim: number, mod: number) => number[];
+};
+/**
+ * 传入矩阵元素生成器，并生成对应的矩阵操作函数对象
+ * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数
+ * @returns {{
+ *   randomMatrix: (rows: number, cols: number) => number[][],
+ *   randomMatrices: (len: number, rows: number, cols: number) => number[][][]
+ * }} 返回包含随机矩阵生成函数的对象
+ */
+export function withMatrixGenerator(generator: (r: number, c: number) => number): {
+    randomMatrix: (rows: number, cols: number) => number[][];
+    randomMatrices: (len: number, rows: number, cols: number) => number[][][];
 };
 /**
  * @template T

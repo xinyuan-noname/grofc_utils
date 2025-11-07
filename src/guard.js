@@ -31,43 +31,32 @@ const safeGuardExecute = (guardFunc, ...args) => {
     }
 }
 
-const throwTypeErrorGiveType = (variable, name = "variable", ...acceptableTypes) => {
-    if (acceptableTypes.length === 1) throw TypeError(`Expected ${name} to be ${acceptableTypes}, but got ${getType(variable)}.`)
-    else if (acceptableTypes.length > 1) throw TypeError(`Expected ${name} to be ${acceptableTypes.slice(0, -1).join(" ,")} or ${acceptableTypes[acceptableTypes.length - 1]}, but got ${getType(variable)}.`)
+const throwTypeErrorGiveType = (variable, name = "variable", ...acceptableTypeDescs) => {
+    if (acceptableTypeDescs.length === 1) throw TypeError(`Expected ${name} to be ${acceptableTypeDescs}, but got ${getType(variable)}.`)
+    else if (acceptableTypeDescs.length > 1) throw TypeError(`Expected ${name} to be ${acceptableTypeDescs.slice(0, -1).join(" ,")} or ${acceptableTypeDescs[acceptableTypeDescs.length - 1]}, but got ${getType(variable)}.`)
 }
-const throwTypeErrorGiveValue = (variable, name = "variable", ...acceptableValues) => {
-    if (acceptableValues.length === 1) throw TypeError(`Expected ${name} to be ${acceptableValues}, but got ${variable}.`)
-    else if (acceptableValues.length > 1) throw TypeError(`Expected ${name} to be ${acceptableValues.slice(0, -1).join(" ,")} or ${acceptableValues[acceptableValues.length - 1]}, but got ${variable}.`)
+const throwTypeErrorGiveValue = (variable, name = "variable", ...acceptableValueDescs) => {
+    if (acceptableValueDescs.length === 1) throw TypeError(`Expected ${name} to be ${acceptableValueDescs}, but got ${variable}.`)
+    else if (acceptableValueDescs.length > 1) throw TypeError(`Expected ${name} to be ${acceptableValueDescs.slice(0, -1).join(" ,")} or ${acceptableValueDescs[acceptableValueDescs.length - 1]}, but got ${variable}.`)
 }
-const throwTypeErrorForArray = (name = "variable", acceptableType, unexpected,) => {
-    throw TypeError(`Expected all elements of ${name} to be ${acceptableType}, but found ${unexpected}.`)
+const throwTypeErrorForArray = (name = "variable", acceptableTypeDesc, unexpectedElementDesc) => {
+    throw TypeError(`Expected all elements of ${name} to be ${acceptableTypeDesc}, but found ${unexpectedElementDesc}.`)
 }
-const throwRangeErrorGiveValue = (variable, name = "variable", ...acceptableRanges) => {
-    if (acceptableRanges.length === 1) throw RangeError(`Expected ${name} to be ${acceptableRanges}, but got ${variable}.`)
-    else if (acceptableRanges.length > 1) throw RangeError(`Expected ${name} to be ${acceptableRanges.slice(0, -1).join(" ,")} or ${acceptableRanges[acceptableRanges.length - 1]}, but got ${variable}.`)
-}
-/**
- * 检查函数调用时是否缺少必要参数
- * @param {IArguments|Array} args - 实际传入的参数列表
- * @param {number} expectedCount - 期望的参数数量
- * @throws {Error} 当实际参数少于期望参数时抛出错误
- */
-export function throwIfArgumentsMissing(args, expectedCount) {
-    if (args.length < expectedCount) {
-        throw new Error(`Expected to receive ${expectedCount} arguments, but got ${args.length}.`)
-    }
+const throwRangeErrorGiveValue = (variable, name = "variable", ...acceptableRangeDescs) => {
+    if (acceptableRangeDescs.length === 1) throw RangeError(`Expected ${name} to be ${acceptableRangeDescs}, but got ${variable}.`)
+    else if (acceptableRangeDescs.length > 1) throw RangeError(`Expected ${name} to be ${acceptableRangeDescs.slice(0, -1).join(" ,")} or ${acceptableRangeDescs[acceptableRangeDescs.length - 1]}, but got ${variable}.`)
 }
 // ------------------------------------------------
-// 通用守卫函数
+// 值校验守卫函数
 // ------------------------------------------------
 
 /**
- * 检查变量是否为有效值（不为 null 或 undefined）
+ * 检查变量是否为空值（不为 null 或 undefined）
  * @param {*} variable - 要检查的变量
  * @param {string} name - 变量名称（用于错误消息）
  * @throws {TypeError} 当变量为 null 或 undefined 时抛出类型错误
  */
-export function throwIfIsInvalidValue(variable, name = "variable") {
+export function throwIfIsNullishValue(variable, name = "variable") {
     if (variable == null) {
         throwTypeErrorGiveValue(variable, name, "not null or undefined")
     }
@@ -88,7 +77,6 @@ export function throwIfIsFalsyValue(variable, name = "variable") {
 // ------------------------------------------------
 // 数字类型守卫函数
 // ------------------------------------------------
-
 /**
  * 检查变量是否为数字类型
  * @param {*} variable - 要检查的变量
@@ -100,7 +88,19 @@ export function throwIfIsNotNumber(variable, name = "variable") {
         throwTypeErrorGiveType(variable, name, "a number")
     }
 }
-
+/**
+ * 检查数字变量是否为 NaN（非数字）
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当变量是 NaN 时抛出类型错误
+ */
+export function throwIfIsNotComparableNumber(variable, name = "variable") {
+    throwIfIsNotNumber(variable, name)
+    if (Number.isNaN(variable)) {
+        throwTypeErrorGiveValue(variable, name, "comparable number(not NaN)")
+    }
+}
+export const throwIfIsNotNumberOrIsNaN = throwIfIsNotComparableNumber;
 /**
  * 检查变量是否为有限数字（排除 Infinity 和 -Infinity，但允许 NaN）
  * @param {*} variable - 要检查的变量
@@ -231,7 +231,7 @@ export function throwIfAllKeysMissing(variable, keys, name = "variable") {
     throwIfIsNotPlainObject(variable);
     if (!Array.isArray(keys)) {
         if (typeof keys === "string") keys = [keys];
-        safeGuardExecute(throwTypeErrorGiveType, keys, name, "string", "an array of string");
+        else safeGuardExecute(throwTypeErrorGiveType, keys, name, "string", "an array of string");
     }
     if (keys.every(key => !(key in variable))) {
         throw new Error(`Expected ${name} to have at least one attribute of [${keys.map(k => `'${k}'`).join(" ,")}], but cannot find.`)
@@ -250,7 +250,7 @@ export function throwIfSomeKeysMissing(variable, keys, name = "variable") {
     throwIfIsNotPlainObject(variable);
     if (!Array.isArray(keys)) {
         if (typeof keys === "string") keys = [keys];
-        safeGuardExecute(throwTypeErrorGiveType, keys, name, "string", "an array of string");
+        else safeGuardExecute(throwTypeErrorGiveType, keys, name, "string", "an array of string");
     }
     const l = keys.filter(key => !(key in variable))
     if (l.length) {
@@ -311,23 +311,45 @@ export function throwIfIsNotNonEmptyArray(variable, name = "variable") {
         throwRangeErrorGiveValue(variable, name, "a non-empty array");
     }
 }
+/**
+ * 检查变量是否为仅包含非NaN数字的数组，如果不是则抛出类型错误
+ * 
+ * @param {*} variable - 需要检查的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息显示
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 通用术语，用于错误消息显示
+ * @throws {TypeError} 当变量不是数组或数组元素不符合要求时抛出错误
+ */
+export function throwIfIsNotComparableNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "comparable numbers(not NaN)";
+    // 验证数组中的每个元素都是非NaN的数字
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (Number.isNaN(e)) {
+            throwTypeErrorForArray(generalTerm, acceptType, "NaN");
+        }
+    }
+}
 
+export const throwIfIsNumberArrayWithoutNaN = throwIfIsNotComparableNumberArray;
 
 /**
  * 校验变量是否为仅包含有限数（有限 number）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、-Infinity
  */
-export function throwIfIsNotFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name}`) {
+export function throwIfIsNotFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
     throwIfIsNotArray(variable, name);
     const acceptType = "finite numbers";
     for (const e of variable) {
         if (typeof e !== "number") {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
         }
-        if (isNaN(e)) {
+        if (Number.isNaN(e)) {
             throwTypeErrorForArray(generalTerm, acceptType, "NaN");
         }
         if (!Number.isFinite(e)) {
@@ -336,23 +358,22 @@ export function throwIfIsNotFiniteNumberArray(variable, name = "variable", gener
         }
     }
 }
-// ... existing code ...
 
 /**
  * 校验变量是否为仅包含正有限数（> 0 的有限 number）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、零
  */
-export function throwIfIsNotPositiveFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name}`) {
+export function throwIfIsNotPositiveFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
     throwIfIsNotArray(variable, name);
     const acceptType = "positive finite numbers";
     for (const e of variable) {
         if (typeof e !== "number") {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
         }
-        if (isNaN(e)) {
+        if (Number.isNaN(e)) {
             throwTypeErrorForArray(generalTerm, acceptType, "NaN");
         }
         if (!Number.isFinite(e)) {
@@ -370,17 +391,17 @@ export function throwIfIsNotPositiveFiniteNumberArray(variable, name = "variable
  * 校验变量是否为仅包含非负有限数（>= 0 的有限 number）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数
  */
-export function throwIfIsNotNonNegativeFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name}`) {
+export function throwIfIsNotNonNegativeFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
     throwIfIsNotArray(variable, name);
     const acceptType = "non-negative finite numbers";
     for (const e of variable) {
         if (typeof e !== "number") {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
         }
-        if (isNaN(e)) {
+        if (Number.isNaN(e)) {
             throwTypeErrorForArray(generalTerm, acceptType, "NaN");
         }
         if (!Number.isFinite(e)) {
@@ -398,17 +419,17 @@ export function throwIfIsNotNonNegativeFiniteNumberArray(variable, name = "varia
  * 校验变量是否为仅包含负有限数（< 0 的有限 number）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、正数、零
  */
-export function throwIfIsNotNegativeFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name}`) {
+export function throwIfIsNotNegativeFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
     throwIfIsNotArray(variable, name);
     const acceptType = "negative finite numbers";
     for (const e of variable) {
         if (typeof e !== "number") {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
         }
-        if (isNaN(e)) {
+        if (Number.isNaN(e)) {
             throwTypeErrorForArray(generalTerm, acceptType, "NaN");
         }
         if (!Number.isFinite(e)) {
@@ -426,17 +447,17 @@ export function throwIfIsNotNegativeFiniteNumberArray(variable, name = "variable
  * 校验变量是否为仅包含整数的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、小数
  */
-export function throwIfIsNotIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name}`) {
+export function throwIfIsNotIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
     throwIfIsNotArray(variable, name);
     const acceptType = "integers";
     for (const e of variable) {
         if (typeof e !== "number") {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
         }
-        if (isNaN(e)) {
+        if (Number.isNaN(e)) {
             throwTypeErrorForArray(generalTerm, acceptType, "NaN");
         }
         if (!Number.isFinite(e)) {
@@ -453,17 +474,17 @@ export function throwIfIsNotIntegerArray(variable, name = "variable", generalTer
  * 校验变量是否为仅包含正整数（> 0 的整数）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、零、小数
  */
-export function throwIfIsNotPositiveIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name}`) {
+export function throwIfIsNotPositiveIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
     throwIfIsNotArray(variable, name);
     const acceptType = "positive integers";
     for (const e of variable) {
         if (typeof e !== "number") {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
         }
-        if (isNaN(e)) {
+        if (Number.isNaN(e)) {
             throwTypeErrorForArray(generalTerm, acceptType, "NaN");
         }
         if (!Number.isFinite(e)) {
@@ -484,17 +505,17 @@ export function throwIfIsNotPositiveIntegerArray(variable, name = "variable", ge
  * 校验变量是否为仅包含非负整数（>= 0 的整数）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、小数
  */
-export function throwIfIsNotNonNegativeIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name}`) {
+export function throwIfIsNotNonNegativeIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
     throwIfIsNotArray(variable, name);
     const acceptType = "non-negative integers";
     for (const e of variable) {
         if (typeof e !== "number") {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
         }
-        if (isNaN(e)) {
+        if (Number.isNaN(e)) {
             throwTypeErrorForArray(generalTerm, acceptType, "NaN");
         }
         if (!Number.isFinite(e)) {
@@ -515,17 +536,17 @@ export function throwIfIsNotNonNegativeIntegerArray(variable, name = "variable",
  * 校验变量是否为仅包含负整数（< 0 的整数）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、正数、零、小数
  */
-export function throwIfIsNotNegativeIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name}`) {
+export function throwIfIsNotNegativeIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
     throwIfIsNotArray(variable, name);
     const acceptType = "negative integers";
     for (const e of variable) {
         if (typeof e !== "number") {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
         }
-        if (isNaN(e)) {
+        if (Number.isNaN(e)) {
             throwTypeErrorForArray(generalTerm, acceptType, "NaN");
         }
         if (!Number.isFinite(e)) {

@@ -1,12 +1,12 @@
 import {
-    throwIfIsInvalidValue,
     throwIfIsNotIterable,
     throwIfIsNotFiniteNumber,
     throwIfIsNotNonNegativeFiniteNumber,
     throwIfIsNotPositiveFiniteNumber,
     throwIfIsNotNonNegativeInteger,
     throwIfIsNotNonNegativeIntegerArray,
-    throwIfIsNotFunction
+    throwIfIsNotFunction,
+    throwIfIsNullishValue
 } from "./guard.js";
 
 /**
@@ -263,7 +263,7 @@ export function randomPicks(inputList, len) {
  * @returns {T}
  */
 export function randomChoice(inputMap) {
-    throwIfIsInvalidValue(inputMap, "inputMap");
+    throwIfIsNullishValue(inputMap, "inputMap");
     if (!(inputMap instanceof Map)) {
         inputMap = new Map(Object.entries(inputMap));
     }
@@ -304,7 +304,7 @@ export function randomChoice(inputMap) {
  */
 export function randomChoices(inputMap, len) {
     throwIfIsNotNonNegativeInteger(len, "len");
-    throwIfIsInvalidValue(inputMap, "inputMap");
+    throwIfIsNullishValue(inputMap, "inputMap");
     if (!(inputMap instanceof Map)) {
         inputMap = new Map(Object.entries(inputMap));
     }

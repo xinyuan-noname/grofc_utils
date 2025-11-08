@@ -1,6 +1,6 @@
 {
   "name": "grofc_utils",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -26,6 +26,10 @@
       "import": "./src/missingData.js",
       "types": "./types/src/missingData.d.ts"
     },
+    "./object": {
+      "import": "./src/object.js",
+      "types": "./types/src/object.d.ts"
+    },
     "./random": {
       "import": "./src/random.js",
       "types": "./types/src/random.d.ts"
@@ -40,6 +44,9 @@
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
     "vitest": "^4.0.6"
   }
 }

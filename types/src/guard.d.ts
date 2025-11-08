@@ -82,6 +82,9 @@ export function throwIfIsNotNegativeInteger(variable: any, name?: string): void;
  * @throws {RangeError} 当变量不是非负整数时抛出范围错误
  */
 export function throwIfIsNotNonNegativeInteger(variable: any, name?: string): void;
+export function throwIfIsNotString(variable: any, name?: string): void;
+export function throwIfIsNotSymbol(variable: any, name?: string): void;
+export function throwIfIsNotBigInt(variable: any, name?: string): void;
 /**
  * 检查变量是否为普通对象（非 null，非数组）
  * @param {*} variable - 要检查的变量
@@ -90,25 +93,63 @@ export function throwIfIsNotNonNegativeInteger(variable: any, name?: string): vo
  */
 export function throwIfIsNotPlainObject(variable: any, name?: string): void;
 /**
+ * 检查对象是否包含指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string} key - 要检查的键名
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当variable不是普通对象或key不是字符串时抛出类型错误
+ * @throws {Error} 当对象中找不到指定键时抛出错误
+ */
+export function throwIfKeyMissing(variable: any, key: string, name?: string): void;
+/**
  * 检查对象是否缺少所有指定的键
  * @param {*} variable - 要检查的对象
- * @param {string|string[]} keys - 要检查的键名或键名数组
+ * @param {string[]} keys - 要检查的键名数组
  * @param {string} name - 变量名称（用于错误消息）
  * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
  * @throws {GuardError} 当 keys 不是字符串或字符串数组时抛出守卫错误
  * @throws {Error} 当对象缺少所有指定键时抛出错误
  */
-export function throwIfAllKeysMissing(variable: any, keys: string | string[], name?: string): void;
+export function throwIfAllKeysMissing(variable: any, keys: string[], name?: string): void;
 /**
  * 检查对象是否缺少任意指定的键
  * @param {*} variable - 要检查的对象
- * @param {string|string[]} keys - 要检查的键名或键名数组
+ * @param {string[]} keys - 要检查的键名数组
  * @param {string} name - 变量名称（用于错误消息）
  * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
  * @throws {GuardError} 当 keys 不是字符串或字符串数组时抛出守卫错误
  * @throws {Error} 当对象缺少任何一个指定键时抛出错误
  */
-export function throwIfSomeKeysMissing(variable: any, keys: string | string[], name?: string): void;
+export function throwIfSomeKeysMissing(variable: any, keys: string[], name?: string): void;
+/**
+ * 检查对象是否包含指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string} property - 要检查的键名
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当variable不是普通对象或property不是字符串时抛出类型错误
+ * @throws {Error} 当对象中找不到指定键时抛出错误
+ */
+export function throwIfOwnPropertyMissing(variable: any, property: string, name?: string): void;
+/**
+ * 检查对象是否缺少所有指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string[]}properties- 要检查的键名数组
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
+ * @throws {GuardError} 当properties不是字符串或字符串数组时抛出守卫错误
+ * @throws {Error} 当对象缺少所有指定键时抛出错误
+ */
+export function throwIfAllOwnPropertiesMissing(variable: any, properties: any, name?: string): void;
+/**
+ * 检查对象是否缺少任意指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string[]} properties - 要检查的键名数组
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
+ * @throws {GuardError} 当 properties 不是字符串或字符串数组时抛出守卫错误
+ * @throws {Error} 当对象缺少任何一个指定键时抛出错误
+ */
+export function throwIfSomeOwnPropertiesMissing(variable: any, properties: string[], name?: string): void;
 /**
  * 检查变量是否为函数类型，如果不是则抛出类型错误
  * @param {*} variable - 要检查的变量
@@ -132,6 +173,8 @@ export function throwIfIsNotIterable(variable: any, name?: string): void;
 export function throwIfIsNotIterableObject(variable: any, name?: string): void;
 export function throwIfIsNotArray(variable: any, name?: string): void;
 export function throwIfIsNotNonEmptyArray(variable: any, name?: string): void;
+export function throwIfIsNotStringArray(variable: any, name?: string, generalTerm?: string): void;
+export function throwIfIsNotNumberArray(variable: any, name?: string, generalTerm?: string): void;
 /**
  * 检查变量是否为仅包含非NaN数字的数组，如果不是则抛出类型错误
  *

@@ -204,6 +204,30 @@ export function throwIfIsNotNonNegativeInteger(variable, name = "variable") {
         throwRangeErrorGiveValue(variable, name, "a non-negative integer");
     }
 }
+//
+// 字符串类型守卫函数
+//
+export function throwIfIsNotString(variable, name = "variable") {
+    if (typeof variable !== "string") {
+        throwTypeErrorGiveType(variable, name, "string")
+    }
+}
+//
+// symbol类型守卫函数
+//
+export function throwIfIsNotSymbol(variable, name = "variable") {
+    if (typeof variable !== "symbol") {
+        throwTypeErrorGiveType(variable, name, "symbol")
+    }
+}
+//
+// bigint类型守卫函数
+//
+export function throwIfIsNotBigInt(variable, name = "variable") {
+    if (typeof variable !== "bigint") {
+        throwTypeErrorGiveType(variable, name, "bigint")
+    }
+}
 // ------------------------------------------------
 // 对象类型守卫函数
 // ------------------------------------------------
@@ -219,9 +243,24 @@ export function throwIfIsNotPlainObject(variable, name = "variable") {
     }
 }
 /**
+ * 检查对象是否包含指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string} key - 要检查的键名
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当variable不是普通对象或key不是字符串时抛出类型错误
+ * @throws {Error} 当对象中找不到指定键时抛出错误
+ */
+export function throwIfKeyMissing(variable, key, name = "variable") {
+    throwIfIsNotPlainObject(variable);
+    throwIfIsNotString(key);
+    if (!(key in variable)) {
+        throw new Error(`Expected ${name} to have key : "${key}", but cannot find.`)
+    }
+}
+/**
  * 检查对象是否缺少所有指定的键
  * @param {*} variable - 要检查的对象
- * @param {string|string[]} keys - 要检查的键名或键名数组
+ * @param {string[]} keys - 要检查的键名数组
  * @param {string} name - 变量名称（用于错误消息）
  * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
  * @throws {GuardError} 当 keys 不是字符串或字符串数组时抛出守卫错误
@@ -229,18 +268,15 @@ export function throwIfIsNotPlainObject(variable, name = "variable") {
  */
 export function throwIfAllKeysMissing(variable, keys, name = "variable") {
     throwIfIsNotPlainObject(variable);
-    if (!Array.isArray(keys)) {
-        if (typeof keys === "string") keys = [keys];
-        else safeGuardExecute(throwTypeErrorGiveType, keys, name, "string", "an array of string");
-    }
+    safeGuardExecute(throwIfIsNotStringArray, keys, name, "an array of string");
     if (keys.every(key => !(key in variable))) {
-        throw new Error(`Expected ${name} to have at least one attribute of [${keys.map(k => `'${k}'`).join(" ,")}], but cannot find.`)
+        throw new Error(`Expected ${name} to have at least one keys of [${keys.map(k => `'${k}'`).join(" ,")}], but cannot find.`)
     }
 }
 /**
  * 检查对象是否缺少任意指定的键
  * @param {*} variable - 要检查的对象
- * @param {string|string[]} keys - 要检查的键名或键名数组
+ * @param {string[]} keys - 要检查的键名数组
  * @param {string} name - 变量名称（用于错误消息）
  * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
  * @throws {GuardError} 当 keys 不是字符串或字符串数组时抛出守卫错误
@@ -248,13 +284,58 @@ export function throwIfAllKeysMissing(variable, keys, name = "variable") {
  */
 export function throwIfSomeKeysMissing(variable, keys, name = "variable") {
     throwIfIsNotPlainObject(variable);
-    if (!Array.isArray(keys)) {
-        if (typeof keys === "string") keys = [keys];
-        else safeGuardExecute(throwTypeErrorGiveType, keys, name, "string", "an array of string");
-    }
+    safeGuardExecute(throwIfIsNotStringArray, keys, name, "an array of string");
     const l = keys.filter(key => !(key in variable))
     if (l.length) {
-        throw new Error(`Expected ${name} to have at all attributes of [${keys.map(k => `'${k}'`).join(" ,")}], but missing [${l.map(k => `'${k}'`).join(" ,")}].`)
+        throw new Error(`Expected ${name} to have at all keys of [${keys.map(k => `'${k}'`).join(" ,")}], but missing [${l.map(k => `'${k}'`).join(" ,")}].`)
+    }
+}
+/**
+ * 检查对象是否包含指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string} property - 要检查的键名
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当variable不是普通对象或property不是字符串时抛出类型错误
+ * @throws {Error} 当对象中找不到指定键时抛出错误
+ */
+export function throwIfOwnPropertyMissing(variable, property, name = "variable") {
+    throwIfIsNotPlainObject(variable);
+    throwIfIsNotString(property);
+    if (Object.hasOwn(variable, property)) {
+        throw new Error(`Expected ${name} to have own property : "${property}", but cannot find.`)
+    }
+}
+/**
+ * 检查对象是否缺少所有指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string[]}properties- 要检查的键名数组
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
+ * @throws {GuardError} 当properties不是字符串或字符串数组时抛出守卫错误
+ * @throws {Error} 当对象缺少所有指定键时抛出错误
+ */
+export function throwIfAllOwnPropertiesMissing(variable, properties, name = "variable") {
+    throwIfIsNotPlainObject(variable);
+    safeGuardExecute(throwIfIsNotStringArray, properties, name, "an array of string");
+    if (properties.every(p => !Object.hasOwn(variable, p))) {
+        throw new Error(`Expected ${name} to have at least one own property of [${properties.map(k => `'${k}'`).join(" ,")}], but cannot find.`)
+    }
+}
+/**
+ * 检查对象是否缺少任意指定的键
+ * @param {*} variable - 要检查的对象
+ * @param {string[]} properties - 要检查的键名数组
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当 variable 不是普通对象时抛出类型错误
+ * @throws {GuardError} 当 properties 不是字符串或字符串数组时抛出守卫错误
+ * @throws {Error} 当对象缺少任何一个指定键时抛出错误
+ */
+export function throwIfSomeOwnPropertiesMissing(variable, properties, name = "variable") {
+    throwIfIsNotPlainObject(variable);
+    safeGuardExecute(throwIfIsNotStringArray, properties, name, "an array of string");
+    const l = properties.filter(p => !Object.hasOwn(variable, p))
+    if (l.length) {
+        throw new Error(`Expected ${name} to have at all own properties of [${properties.map(k => `'${k}'`).join(" ,")}], but missing [${l.map(k => `'${k}'`).join(" ,")}].`)
     }
 }
 // ------------------------------------------------
@@ -309,6 +390,25 @@ export function throwIfIsNotNonEmptyArray(variable, name = "variable") {
     throwIfIsNotArray(variable, name);
     if (variable.length === 0) {
         throwRangeErrorGiveValue(variable, name, "a non-empty array");
+    }
+}
+
+export function throwIfIsNotStringArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "strings";
+    for (const e of variable) {
+        if (typeof e !== "string") {
+            throwTypeErrorForArray(generalTerm, acceptType, `a non-string value of type ${getType(e)}`)
+        }
+    }
+}
+export function throwIfIsNotNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "numbers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`)
+        }
     }
 }
 /**

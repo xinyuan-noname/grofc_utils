@@ -151,7 +151,7 @@ export function randomVectors(len, dim = 2, mod = 1, generator = randomGaussian)
  * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数，默认生成0-10的随机整数
  * @returns {number[][]} 二维数组表示的矩阵，大小为rows×cols
  */
-export function randomMatrix(rows = 2, cols = rows, generator = (_r, _c) => randomInt(0, 10)) {
+export function randomMatrix(rows = 2, cols = rows, generator = () => randomInt(0, 10)) {
     throwIfIsNotNonNegativeInteger(rows, "rows");
     throwIfIsNotNonNegativeInteger(cols, "cols");
     throwIfIsNotFunction(generator, "generator");
@@ -166,7 +166,7 @@ export function randomMatrix(rows = 2, cols = rows, generator = (_r, _c) => rand
  * @param {(r: number, c: number) => number} generator 用于生成矩阵元素的函数，接收行列索引作为参数，默认生成0-10的随机整数
  * @returns {number[][][]} 包含len个矩阵的数组，每个矩阵都是二维数组
  */
-export function randomMatrices(len, rows = 2, cols = rows, generator = (_r, _c) => randomInt(0, 10)) {
+export function randomMatrices(len, rows = 2, cols = rows, generator = () => randomInt(0, 10)) {
     throwIfIsNotNonNegativeInteger(len, "len");
     return Array.from({ length: len }, () => randomMatrix(rows, cols, generator))
 }

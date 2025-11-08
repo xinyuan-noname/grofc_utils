@@ -1,17 +1,10 @@
 /**
- * 检查函数调用时是否缺少必要参数
- * @param {IArguments|Array} args - 实际传入的参数列表
- * @param {number} expectedCount - 期望的参数数量
- * @throws {Error} 当实际参数少于期望参数时抛出错误
- */
-export function throwIfArgumentsMissing(args: IArguments | any[], expectedCount: number): void;
-/**
- * 检查变量是否为有效值（不为 null 或 undefined）
+ * 检查变量是否为空值（不为 null 或 undefined）
  * @param {*} variable - 要检查的变量
  * @param {string} name - 变量名称（用于错误消息）
  * @throws {TypeError} 当变量为 null 或 undefined 时抛出类型错误
  */
-export function throwIfIsInvalidValue(variable: any, name?: string): void;
+export function throwIfIsNullishValue(variable: any, name?: string): void;
 /**
  * 检查变量是否为真值（truthy）
  * @param {*} variable - 要检查的变量
@@ -26,6 +19,13 @@ export function throwIfIsFalsyValue(variable: any, name?: string): void;
  * @throws {TypeError} 当变量不是数字类型时抛出类型错误
  */
 export function throwIfIsNotNumber(variable: any, name?: string): void;
+/**
+ * 检查数字变量是否为 NaN（非数字）
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当变量是 NaN 时抛出类型错误
+ */
+export function throwIfIsNotComparableNumber(variable: any, name?: string): void;
 /**
  * 检查变量是否为有限数字（排除 Infinity 和 -Infinity，但允许 NaN）
  * @param {*} variable - 要检查的变量
@@ -133,10 +133,19 @@ export function throwIfIsNotIterableObject(variable: any, name?: string): void;
 export function throwIfIsNotArray(variable: any, name?: string): void;
 export function throwIfIsNotNonEmptyArray(variable: any, name?: string): void;
 /**
+ * 检查变量是否为仅包含非NaN数字的数组，如果不是则抛出类型错误
+ *
+ * @param {*} variable - 需要检查的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息显示
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 通用术语，用于错误消息显示
+ * @throws {TypeError} 当变量不是数组或数组元素不符合要求时抛出错误
+ */
+export function throwIfIsNotComparableNumberArray(variable: any, name?: string, generalTerm?: string): void;
+/**
  * 校验变量是否为仅包含有限数（有限 number）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、-Infinity
  */
 export function throwIfIsNotFiniteNumberArray(variable: any, name?: string, generalTerm?: string): void;
@@ -144,7 +153,7 @@ export function throwIfIsNotFiniteNumberArray(variable: any, name?: string, gene
  * 校验变量是否为仅包含正有限数（> 0 的有限 number）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、零
  */
 export function throwIfIsNotPositiveFiniteNumberArray(variable: any, name?: string, generalTerm?: string): void;
@@ -152,7 +161,7 @@ export function throwIfIsNotPositiveFiniteNumberArray(variable: any, name?: stri
  * 校验变量是否为仅包含非负有限数（>= 0 的有限 number）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数
  */
 export function throwIfIsNotNonNegativeFiniteNumberArray(variable: any, name?: string, generalTerm?: string): void;
@@ -160,7 +169,7 @@ export function throwIfIsNotNonNegativeFiniteNumberArray(variable: any, name?: s
  * 校验变量是否为仅包含负有限数（< 0 的有限 number）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、正数、零
  */
 export function throwIfIsNotNegativeFiniteNumberArray(variable: any, name?: string, generalTerm?: string): void;
@@ -168,7 +177,7 @@ export function throwIfIsNotNegativeFiniteNumberArray(variable: any, name?: stri
  * 校验变量是否为仅包含整数的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、小数
  */
 export function throwIfIsNotIntegerArray(variable: any, name?: string, generalTerm?: string): void;
@@ -176,7 +185,7 @@ export function throwIfIsNotIntegerArray(variable: any, name?: string, generalTe
  * 校验变量是否为仅包含正整数（> 0 的整数）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、零、小数
  */
 export function throwIfIsNotPositiveIntegerArray(variable: any, name?: string, generalTerm?: string): void;
@@ -184,7 +193,7 @@ export function throwIfIsNotPositiveIntegerArray(variable: any, name?: string, g
  * 校验变量是否为仅包含非负整数（>= 0 的整数）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、小数
  */
 export function throwIfIsNotNonNegativeIntegerArray(variable: any, name?: string, generalTerm?: string): void;
@@ -192,7 +201,23 @@ export function throwIfIsNotNonNegativeIntegerArray(variable: any, name?: string
  * 校验变量是否为仅包含负整数（< 0 的整数）的数组。
  * @param {*} variable - 待校验的变量
  * @param {string} [name="variable"] - 变量名称，用于错误消息上下文
- * @param {string} [generalTerm=`all elements of ${name}`] - 元素合称，用于错误消息上下文
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 元素合称，用于错误消息上下文
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、正数、零、小数
  */
 export function throwIfIsNotNegativeIntegerArray(variable: any, name?: string, generalTerm?: string): void;
+/**
+ * 检查数字变量是否为 NaN（非数字）
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息）
+ * @throws {TypeError} 当变量是 NaN 时抛出类型错误
+ */
+export function throwIfIsNotNumberOrIsNaN(variable: any, name?: string): void;
+/**
+ * 检查变量是否为仅包含非NaN数字的数组，如果不是则抛出类型错误
+ *
+ * @param {*} variable - 需要检查的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息显示
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 通用术语，用于错误消息显示
+ * @throws {TypeError} 当变量不是数组或数组元素不符合要求时抛出错误
+ */
+export function throwIfIsNumberArrayWithoutNaN(variable: any, name?: string, generalTerm?: string): void;

@@ -209,6 +209,14 @@ export function withMatrixGenerator(generator) {
     }
 }
 
+export function randomColor() {
+    return "#" + randomInt(0, 0x100000000 - 1).toString(16).slice(2, 8)
+}
+export function randomColors(len) {
+    throwIfIsNotPositiveFiniteNumber(len, "len")
+    return Array.from({ length: len }, randomColor)
+}
+
 /**
  * @template T
  * @param {Iterable<T>} inputFlow 

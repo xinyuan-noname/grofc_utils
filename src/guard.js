@@ -4,12 +4,6 @@
  * @returns {string} 变量的类型字符串
  */
 const getType = v => v === null ? "null" : typeof v
-const isPlainObject = (obj) => {
-    if (typeof obj !== "object" || obj === null) return false;
-    const prototype = Object.getPrototypeOf(obj);
-    if (prototype !== Object.prototype && prototype !== null) return false;
-    return true
-}
 
 class GuardError extends Error {
     /**
@@ -51,6 +45,21 @@ const throwRangeErrorGiveValue = (variable, name = "variable", ...acceptableRang
     if (acceptableRangeDescs.length === 1) throw RangeError(`Expected ${name} to be ${acceptableRangeDescs}, but got ${variable}.`)
     else if (acceptableRangeDescs.length > 1) throw RangeError(`Expected ${name} to be ${acceptableRangeDescs.slice(0, -1).join(" ,")} or ${acceptableRangeDescs[acceptableRangeDescs.length - 1]}, but got ${variable}.`)
 }
+
+/**
+ * 检查给定对象是否为普通对象
+ * 普通对象是指通过对象字面量 {} 或 new Object() 创建的对象，
+ * 不包括数组、函数以及其他自定义构造函数创建的实例
+ * @param {*} obj - 需要检查的对象
+ * @returns {boolean} 如果是普通对象返回 true，否则返回 false
+ */
+export function isPlainObject(obj) {
+    if (typeof obj !== "object" || obj === null) return false;
+    const prototype = Object.getPrototypeOf(obj);
+    if (prototype !== Object.prototype && prototype !== null) return false;
+    return true
+}
+
 // ------------------------------------------------
 // 值校验守卫函数
 // ------------------------------------------------

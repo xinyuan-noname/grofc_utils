@@ -1,4 +1,12 @@
 /**
+ * 检查给定对象是否为普通对象
+ * 普通对象是指通过对象字面量 {} 或 new Object() 创建的对象，
+ * 不包括数组、函数以及其他自定义构造函数创建的实例
+ * @param {*} obj - 需要检查的对象
+ * @returns {boolean} 如果是普通对象返回 true，否则返回 false
+ */
+export function isPlainObject(obj: any): boolean;
+/**
  * 检查变量是否为期望值之一，如果不是则抛出类型错误
  * @param {*} variable - 要检查的变量
  * @param {string} name - 变量名称（用于错误消息），默认值为"variable"

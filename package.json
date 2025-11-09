@@ -1,6 +1,6 @@
 {
   "name": "grofc_utils",
-  "version": "1.1.0",
+  "version": "1.3.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,10 @@
     "./array": {
       "import": "./src/array.js",
       "types": "./types/src/array.d.ts"
+    },
+    "./event": {
+      "import": "./src/event.js",
+      "types": "./types/src/event.d.ts"
     },
     "./guard": {
       "import": "./src/guard.js",
@@ -48,5 +52,10 @@
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "vitest": "^4.0.6"
-  }
+  },
+  "files": [
+    "index.js",
+    "/src",
+    "/types"
+  ]
 }

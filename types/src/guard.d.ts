@@ -1,4 +1,20 @@
 /**
+ * 检查变量是否为期望值之一，如果不是则抛出类型错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @param {...*} expectedValues - 期望值列表
+ * @throws {TypeError} 当变量不是期望值之一时抛出类型错误
+ */
+export function throwIfIsNotExpectedValue(variable: any, name?: string, ...expectedValues: any[]): void;
+/**
+ * 检查变量是否为不期望的值之一，如果是则抛出类型错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @param {...*} unexpectedValues - 不期望的值列表
+ * @throws {TypeError} 当变量是不期望的值之一时抛出类型错误
+ */
+export function throwIfIsUnExpectedValue(variable: any, name?: string, ...unexpectedValues: any[]): void;
+/**
  * 检查变量是否为空值（不为 null 或 undefined）
  * @param {*} variable - 要检查的变量
  * @param {string} name - 变量名称（用于错误消息）
@@ -171,9 +187,53 @@ export function throwIfIsNotIterable(variable: any, name?: string): void;
  * @throws {TypeError} 当变量不是可迭代对象时抛出类型错误
  */
 export function throwIfIsNotIterableObject(variable: any, name?: string): void;
+/**
+ * 检查变量是否为数组，如果不是则抛出类型错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @throws {TypeError} 当变量不是数组时抛出类型错误
+ */
 export function throwIfIsNotArray(variable: any, name?: string): void;
+/**
+ * 检查变量是否为非空数组，如果不是则抛出错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @throws {TypeError} 当变量不是数组时抛出类型错误
+ * @throws {Error} 当变量是空数组时抛出错误
+ */
 export function throwIfIsNotNonEmptyArray(variable: any, name?: string): void;
+/**
+ * 检查变量是否为仅包含字符串的数组，如果不是则抛出类型错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @param {string} generalTerm - 通用术语（用于错误消息），默认值为`all elements of ${name || "array"}`
+ * @throws {TypeError} 当变量不是数组或包含非字符串元素时抛出类型错误
+ */
 export function throwIfIsNotStringArray(variable: any, name?: string, generalTerm?: string): void;
+/**
+ * 检查变量是否为仅包含BigInt值的数组，如果不是则抛出类型错误
+ * @param {*} variable - 需要检查的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息显示
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 通用术语，用于错误消息显示
+ * @throws {TypeError} 当变量不是数组或包含非BigInt元素时抛出类型错误
+ */
+export function throwIfIsNotBigIntArray(variable: any, name?: string, generalTerm?: string): void;
+/**
+ * 检查变量是否为仅包含Symbol值的数组，如果不是则抛出类型错误
+ * @param {*} variable - 需要检查的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息显示
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 通用术语，用于错误消息显示
+ * @throws {TypeError} 当变量不是数组或包含非Symbol元素时抛出类型错误
+ */
+export function throwIfIsNotSymbolArray(variable: any, name?: string, generalTerm?: string): void;
+/**
+ * 检查变量是否为仅包含普通对象的数组，如果不是则抛出类型错误
+ * @param {*} variable - 需要检查的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息显示
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 通用术语，用于错误消息显示
+ * @throws {TypeError} 当变量不是数组或包含非普通对象元素时抛出类型错误
+ */
+export function throwIfIsNotPlainObjectArray(variable: any, name?: string, generalTerm?: string): void;
 export function throwIfIsNotNumberArray(variable: any, name?: string, generalTerm?: string): void;
 /**
  * 检查变量是否为仅包含非NaN数字的数组，如果不是则抛出类型错误

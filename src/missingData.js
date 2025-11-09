@@ -1,4 +1,4 @@
-import { throwIfIsNotNonNegativeInteger } from "./guard";
+import { throwIfIsNotNonNegativeInteger } from "./guard.js";
 
 /**
  * 前向填充（forward-fill）输入数据，向前填充无效值。

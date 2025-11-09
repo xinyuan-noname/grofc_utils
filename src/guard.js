@@ -4,7 +4,12 @@
  * @returns {string} 变量的类型字符串
  */
 const getType = v => v === null ? "null" : typeof v
-
+const isPlainObject = (obj) => {
+    if (typeof obj !== "object" || obj === null) return false;
+    const prototype = Object.getPrototypeOf(obj);
+    if (prototype !== Object.prototype && prototype !== null) return false;
+    return true
+}
 
 class GuardError extends Error {
     /**
@@ -49,7 +54,33 @@ const throwRangeErrorGiveValue = (variable, name = "variable", ...acceptableRang
 // ------------------------------------------------
 // 值校验守卫函数
 // ------------------------------------------------
-
+/**
+ * 检查变量是否为期望值之一，如果不是则抛出类型错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @param {...*} expectedValues - 期望值列表
+ * @throws {TypeError} 当变量不是期望值之一时抛出类型错误
+ */
+export function throwIfIsNotExpectedValue(variable, name = "variable", ...expectedValues) {
+    safeGuardExecute(throwIfIsNotNonEmptyArray, ...expectedValues)
+    if (!expectedValues.includes(variable)) {
+        throwTypeErrorGiveType(variable, name, ...expectedValues);
+    }
+}
+/**
+ * 检查变量是否为不期望的值之一，如果是则抛出类型错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @param {...*} unexpectedValues - 不期望的值列表
+ * @throws {TypeError} 当变量是不期望的值之一时抛出类型错误
+ */
+export function throwIfIsUnExpectedValue(variable, name = "variable", ...unexpectedValues) {
+    safeGuardExecute(throwIfIsNotNonEmptyArray, ...unexpectedValues)
+    if (unexpectedValues.includes(variable)) {
+        const [f, ...upexpedValuesWf] = unexpectedValues;
+        throwTypeErrorGiveType(variable, name, `not ${f}`, ...upexpedValuesWf);
+    }
+}
 /**
  * 检查变量是否为空值（不为 null 或 undefined）
  * @param {*} variable - 要检查的变量
@@ -231,6 +262,7 @@ export function throwIfIsNotBigInt(variable, name = "variable") {
 // ------------------------------------------------
 // 对象类型守卫函数
 // ------------------------------------------------
+
 /**
  * 检查变量是否为普通对象（非 null，非数组）
  * @param {*} variable - 要检查的变量
@@ -238,7 +270,7 @@ export function throwIfIsNotBigInt(variable, name = "variable") {
  * @throws {TypeError} 当变量不是普通对象时抛出类型错误
  */
 export function throwIfIsNotPlainObject(variable, name = "variable") {
-    if (typeof variable !== 'object' || variable === null || Array.isArray(variable)) {
+    if (!isPlainObject(variable)) {
         throwTypeErrorGiveType(variable, name, "a plain object");
     }
 }
@@ -381,24 +413,93 @@ export function throwIfIsNotIterableObject(variable, name = "") {
 //------------------------------------------------
 // 数组类型守卫函数
 // ------------------------------------------------
+/**
+ * 检查变量是否为数组，如果不是则抛出类型错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @throws {TypeError} 当变量不是数组时抛出类型错误
+ */
 export function throwIfIsNotArray(variable, name = "variable") {
     if (!Array.isArray(variable)) {
         throwTypeErrorGiveType(variable, name, "an array");
     }
 }
+
+/**
+ * 检查变量是否为非空数组，如果不是则抛出错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @throws {TypeError} 当变量不是数组时抛出类型错误
+ * @throws {Error} 当变量是空数组时抛出错误
+ */
 export function throwIfIsNotNonEmptyArray(variable, name = "variable") {
     throwIfIsNotArray(variable, name);
     if (variable.length === 0) {
-        throwRangeErrorGiveValue(variable, name, "a non-empty array");
+        throw new Error(`Expected ${variable} to have at least one item, but got zero.`)
     }
 }
 
+/**
+ * 检查变量是否为仅包含字符串的数组，如果不是则抛出类型错误
+ * @param {*} variable - 要检查的变量
+ * @param {string} name - 变量名称（用于错误消息），默认值为"variable"
+ * @param {string} generalTerm - 通用术语（用于错误消息），默认值为`all elements of ${name || "array"}`
+ * @throws {TypeError} 当变量不是数组或包含非字符串元素时抛出类型错误
+ */
 export function throwIfIsNotStringArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
     throwIfIsNotArray(variable, name);
     const acceptType = "strings";
     for (const e of variable) {
         if (typeof e !== "string") {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-string value of type ${getType(e)}`)
+        }
+    }
+}
+/**
+ * 检查变量是否为仅包含BigInt值的数组，如果不是则抛出类型错误
+ * @param {*} variable - 需要检查的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息显示
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 通用术语，用于错误消息显示
+ * @throws {TypeError} 当变量不是数组或包含非BigInt元素时抛出类型错误
+ */
+export function throwIfIsNotBigIntArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "bigints";
+    for (const e of variable) {
+        if (typeof e !== "bigint") {
+            throwTypeErrorForArray(generalTerm, acceptType, `a non-bigint value of type ${getType(e)}`)
+        }
+    }
+}
+/**
+ * 检查变量是否为仅包含Symbol值的数组，如果不是则抛出类型错误
+ * @param {*} variable - 需要检查的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息显示
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 通用术语，用于错误消息显示
+ * @throws {TypeError} 当变量不是数组或包含非Symbol元素时抛出类型错误
+ */
+export function throwIfIsNotSymbolArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "symbols";
+    for (const e of variable) {
+        if (typeof e !== "symbol") {
+            throwTypeErrorForArray(generalTerm, acceptType, `a non-symbol value of type ${getType(e)}`)
+        }
+    }
+}
+/**
+ * 检查变量是否为仅包含普通对象的数组，如果不是则抛出类型错误
+ * @param {*} variable - 需要检查的变量
+ * @param {string} [name="variable"] - 变量名称，用于错误消息显示
+ * @param {string} [generalTerm=`all elements of ${name || "array"}`] - 通用术语，用于错误消息显示
+ * @throws {TypeError} 当变量不是数组或包含非普通对象元素时抛出类型错误
+ */
+export function throwIfIsNotPlainObjectArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "plain objects";
+    for (const e of variable) {
+        if (isPlainObject(variable)) {
+            throwTypeErrorForArray(generalTerm, acceptType, `a non-plain object value of type ${e}`)
         }
     }
 }

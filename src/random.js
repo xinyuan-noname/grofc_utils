@@ -217,6 +217,19 @@ export function randomColors(len) {
     return Array.from({ length: len }, randomColor)
 }
 
+export function randomString(count) {
+    throwIfIsNotNonNegativeInteger(count, "count")
+    let result = ""
+    while (result.length < count) {
+        result += Math.random().toString(36).slice(2);
+    }
+    return result.substring(0, count)
+}
+export function randomStrings(len, count) {
+    throwIfIsNotNonNegativeInteger(len, "len")
+    throwIfIsNotNonNegativeInteger(count, "count")
+    return Array.from({ length: len }, () => randomString(count))
+}
 /**
  * @template T
  * @param {Iterable<T>} inputFlow 

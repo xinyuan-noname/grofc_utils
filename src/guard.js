@@ -71,7 +71,7 @@ export function isPlainObject(obj) {
  * @throws {TypeError} 当变量不是期望值之一时抛出类型错误
  */
 export function throwIfIsNotExpectedValue(variable, name = "variable", ...expectedValues) {
-    safeGuardExecute(throwIfIsNotNonEmptyArray, ...expectedValues)
+    safeGuardExecute(throwIfIsNotNonEmptyArray, expectedValues)
     if (!expectedValues.includes(variable)) {
         throwTypeErrorGiveType(variable, name, ...expectedValues);
     }
@@ -84,7 +84,7 @@ export function throwIfIsNotExpectedValue(variable, name = "variable", ...expect
  * @throws {TypeError} 当变量是不期望的值之一时抛出类型错误
  */
 export function throwIfIsUnExpectedValue(variable, name = "variable", ...unexpectedValues) {
-    safeGuardExecute(throwIfIsNotNonEmptyArray, ...unexpectedValues)
+    safeGuardExecute(throwIfIsNotNonEmptyArray, unexpectedValues)
     if (unexpectedValues.includes(variable)) {
         const [f, ...upexpedValuesWf] = unexpectedValues;
         throwTypeErrorGiveType(variable, name, `not ${f}`, ...upexpedValuesWf);

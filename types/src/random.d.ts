@@ -121,6 +121,8 @@ export function withMatrixGenerator(generator: (r: number, c: number) => number)
 };
 export function randomColor(): string;
 export function randomColors(len: any): string[];
+export function randomString(count: any): string;
+export function randomStrings(len: any, count: any): string[];
 /**
  * @template T
  * @param {Iterable<T>} inputFlow

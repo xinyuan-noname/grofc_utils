@@ -45,17 +45,36 @@ const throwRangeErrorGiveValue = (variable, name = "variable", ...acceptableRang
     if (acceptableRangeDescs.length === 1) throw RangeError(`Expected ${name} to be ${acceptableRangeDescs}, but got ${variable}.`)
     else if (acceptableRangeDescs.length > 1) throw RangeError(`Expected ${name} to be ${acceptableRangeDescs.slice(0, -1).join(" ,")} or ${acceptableRangeDescs[acceptableRangeDescs.length - 1]}, but got ${variable}.`)
 }
+/**
+ * 检查变量是否为 null 或 undefined
+ * @param {*} variable - 需要检查的变量
+ * @returns {boolean} 如果变量为 null 或 undefined 返回 true，否则返回 false
+ */
+export function isNullishValue(variable) {
+    return variable == null
+}
 
+/**
+ * 检查变量是否为可比较的数字（不是 NaN）
+ * @param {*} variable - 需要检查的变量
+ * @returns {boolean} 如果变量是数字且不是 NaN 返回 true，否则返回 false
+ */
+export function isComparableNumber(variable) {
+    return typeof variable === "number" && !Number.isNaN(variable)
+}
+export function isDivisibleNumber(variable) {
+    return typeof variable === "number" && Number.isFinite(variable) && variable !== 0
+}
 /**
  * 检查给定对象是否为普通对象
  * 普通对象是指通过对象字面量 {} 或 new Object() 创建的对象，
  * 不包括数组、函数以及其他自定义构造函数创建的实例
- * @param {*} obj - 需要检查的对象
+ * @param {*} variable - 需要检查的对象
  * @returns {boolean} 如果是普通对象返回 true，否则返回 false
  */
-export function isPlainObject(obj) {
-    if (typeof obj !== "object" || obj === null) return false;
-    const prototype = Object.getPrototypeOf(obj);
+export function isPlainObject(variable) {
+    if (typeof variable !== "object" || variable === null) return false;
+    const prototype = Object.getPrototypeOf(variable);
     if (prototype !== Object.prototype && prototype !== null) return false;
     return true
 }
@@ -153,7 +172,12 @@ export function throwIfIsNotFiniteNumber(variable, name = "variable") {
         throwTypeErrorGiveValue(variable, name, "a finite number")
     }
 }
-
+export function throwIfIsNotDivisibleNumber(variable, name = "variable") {
+    throwIfIsNotFiniteNumber(variable, name)
+    if (variable === 0) {
+        throwRangeErrorGiveValue(variable, name, "a divisible number");
+    }
+}
 /**
  * 检查变量是否为正有限数
  * @param {*} variable - 要检查的变量
@@ -565,6 +589,25 @@ export function throwIfIsNotFiniteNumberArray(variable, name = "variable", gener
         if (!Number.isFinite(e)) {
             const desc = e > 0 ? "Infinity" : "-Infinity";
             throwTypeErrorForArray(generalTerm, acceptType, desc);
+        }
+    }
+}
+export function throwIfIsNotDivisibleNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
+    throwIfIsNotArray(variable, name);
+    const acceptType = "disvisible numbers";
+    for (const e of variable) {
+        if (typeof e !== "number") {
+            throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+        }
+        if (Number.isNaN(e)) {
+            throwTypeErrorForArray(generalTerm, acceptType, "NaN");
+        }
+        if (!Number.isFinite(e)) {
+            const desc = e > 0 ? "Infinity" : "-Infinity";
+            throwTypeErrorForArray(generalTerm, acceptType, desc);
+        }
+        if(e===0){
+            throwTypeErrorForArray(generalTerm, acceptType, "zero");
         }
     }
 }

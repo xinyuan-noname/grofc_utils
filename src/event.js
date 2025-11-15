@@ -1,4 +1,9 @@
-import { isPlainObject, throwIfIsNotComparableNumber, throwIfIsNotExpectedValue, throwIfIsNotFunction, throwIfIsNotPlainObject, throwIfIsNotString, throwIfSomeKeysMissing } from "./guard.js"
+import {
+    isNullishValue, isPlainObject,
+    throwIfIsNotDivisibleNumber, throwIfIsNotComparableNumber, throwIfIsNotExpectedValue,
+    throwIfIsNotFunction, throwIfIsNotPlainObject, throwIfIsNotString, throwIfSomeKeysMissing,
+    throwIfIsNotNonNegativeFiniteNumber
+} from "./guard.js"
 import { clamp } from "./number.js";
 import { assignWithDescriptors, makePropertyReadOnly } from "./object.js";
 import { randomString } from "./random.js";
@@ -60,6 +65,7 @@ import { randomString } from "./random.js";
  * @property {function(BaseEvent): boolean} [filter] - 过滤函数，返回 false 则跳过此监听器
  * @property {function(BeforeEvent|BeginEvent|EndEvent|AfterEvent): void | RecursiveDispatchResult} callback - 回调函数
  * @property {boolean} [once=false] - 是否仅触发一次，触发后自动移除
+ * @property {number} [priority=0] - 触发的优先级，默认为0，默认按顺序执行
  */
 
 /**
@@ -79,7 +85,6 @@ import { randomString } from "./random.js";
  * - **ing**: 核心逻辑执行，由用户传入的 ing 函数处理
  * - **end**: 处理 ing 结果
  * - **after**: 清理或触发后续事件，支持递归 dispatch
- *
  * @returns {{
  *   dispatchSync: (
  *     event: string,
@@ -108,12 +113,14 @@ import { randomString } from "./random.js";
  * }}
  */
 export function createEventEmitter() {
-    const globalSymbol = Symbol(null);
+    let currentEvent = null;
+    const defaultTarget = Symbol(null);
     /**
-     * @type {WeakMap<object,Map<string,Listener>>}
+     * @type {WeakMap<object,Map<string,Listener[]>>}
      */
-    const targetListenerMap = new WeakMap([[globalSymbol, new Map()]])
-    const getOrCreateTargetMap = (target = globalSymbol) => {
+    const targetListenerMap = new WeakMap([[defaultTarget, new Map()]]);
+    const getOrCreateTargetMap = (target) => {
+        target ??= defaultTarget
         let map = targetListenerMap.get(target);
         if (!map) {
             map = new Map();
@@ -122,45 +129,74 @@ export function createEventEmitter() {
         return map;
     }
 
-    // 辅助函数：获取指定 target 上的监听器列表
-    const getListeners = (target = globalSymbol, event, phase) => {
+    const getListeners = (target, event, phase) => {
+        target ??= defaultTarget
         const map = targetListenerMap.get(target);
         if (!map) return [];
-        return map.get(`${event}:${phase}`) || [];
+        const listenerList = map.get(`${event}:${phase}`);
+        if (!listenerList) return [];
+        return listenerList;
+    }
+    const deleteListener = (target, targetMap, eventName, list, index) => {
+        throwIfIsNotNonNegativeFiniteNumber(index);
+        list.splice(index, 1)
+        if (list.length === 0) {
+            targetMap.delete(eventName);
+        }
+        if (targetMap.size === 0) {
+            targetListenerMap.delete(target)
+        }
     }
 
-    const on = (target = globalSymbol, event, phase, listener = {}) => {
+    const on = (target, event, phase, listener = {}) => {
         throwIfIsNotString(event, "event");
-        throwIfIsNotExpectedValue(phase, "phase", "before", "begin", "end", "after");
+        event === "error" ?
+            throwIfIsNotExpectedValue(phase, "phase", "before", "ing", "begin", "end", "after")
+            : throwIfIsNotExpectedValue(phase, "phase", "before", "begin", "end", "after");
         throwIfSomeKeysMissing(listener, ["name", "callback"], "listener");
+        let { priority } = listener
+        if (isNullishValue(priority)) {
+            priority = 0;
+        } else {
+            throwIfIsNotComparableNumber(priority, "listener.priority")
+        }
+        target ??= defaultTarget
         const eventName = `${event}:${phase}`;
         const targetMap = getOrCreateTargetMap(target);
         const list = targetMap.get(eventName) || [];
-        list.push(listener);
+        for (let i = 0; i < list.length; i++) {
+            if ((list[i].priority ?? 0) > priority) {
+                list.splice(i, 0, listener);
+                break;
+            }
+        }
         targetMap.set(eventName, list);
+        return () => {
+            const index = list.findIndex(l => l === listener);
+            if (index !== -1) deleteListener(target, targetMap, eventName, list, index)
+        }
     };
 
-    const off = (target = globalSymbol, event, phase, name) => {
+    const off = (target, event, phase, name) => {
         throwIfIsNotString(event, "event");
-        throwIfIsNotExpectedValue(phase, "phase", "before", "begin", "end", "after");
+        event === "error" ?
+            throwIfIsNotExpectedValue(phase, "phase", "before", "ing", "begin", "end", "after")
+            : throwIfIsNotExpectedValue(phase, "phase", "before", "begin", "end", "after");
         throwIfIsNotString(name, "name");
+        target ??= defaultTarget
         const eventName = `${event}:${phase}`;
         const targetMap = targetListenerMap.get(target);
         if (!targetMap) return;
         const list = targetMap.get(eventName);
         if (!list) return;
         const index = list.findIndex(l => l.name === name);
-        if (index !== -1) {
-            list.splice(index, 1);
-            if (list.length === 0) {
-                targetMap.delete(eventName);
-            }
-        }
+        if (index !== -1) deleteListener(target, targetMap, eventName, list, index)
     };
     const dispatchSync = (event, ing = () => { }, options = {}) => {
         throwIfIsNotString(event, "event");
         throwIfIsNotFunction(ing, "ing");
         throwIfIsNotPlainObject(options, "options");
+        let _phase = null;
         const {
             id = randomString(36),
             type = null,
@@ -170,19 +206,21 @@ export function createEventEmitter() {
             context = {},
             ...meta
         } = options;
-        const baseEvent = {
+        const eventInfo = {
             get id() {
                 return id
             },
             get target() {
                 return target
             },
-
             get name() {
                 return event
             },
             get type() {
                 return type
+            },
+            get phase() {
+                return _phase
             },
             get preData() {
                 return preData
@@ -195,73 +233,119 @@ export function createEventEmitter() {
             },
             get status() {
                 return { ...status }
+            },
+            parentEvent: currentEvent
+        }
+        currentEvent = eventInfo;
+        const phaseManager = {
+            before: () => {
+                _phase = "before"
+                const beforeListenerList = getListeners(target, event, "before");
+                for (const { name, filter, callback, once } of beforeListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    const toCancel = callback(eventInfo);
+                    if (once) off(target, event, "before", name)
+                    if (toCancel === false && eventInfo.status.cancellable) return false;
+                }
+                const beforeGlobalListenerList = getListeners(null, event, "before");
+                for (const { name, filter, callback, once } of beforeGlobalListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    const toCancel = callback(eventInfo);
+                    if (once) off(null, event, "before", name)
+                    if (toCancel === false && eventInfo.status.cancellable) return false;
+                }
+            },
+            begin: () => {
+                _phase = "begin"
+                const beginListenerList = getListeners(target, event, "begin");
+                for (const { name, callback, filter, once } of beginListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    callback(eventInfo);
+                    if (once) off(target, event, "begin", name);
+                }
+                const beginGlobalListenerList = getListeners(null, event, "begin");
+                for (const { name, filter, callback, once } of beginGlobalListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    callback(eventInfo);
+                    if (once) off(null, event, "begin", name)
+                }
+            },
+            ing: () => {
+                _phase = "ing"
+                const currentData = ing(eventInfo);
+                assignWithDescriptors(eventInfo, {
+                    get currentData() {
+                        return currentData
+                    }
+                })
+            },
+            end: () => {
+                _phase = "end"
+                const endListenerList = getListeners(target, event, "end");
+                for (const { name, callback, filter, once } of endListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    callback(eventInfo);
+                    if (once) off(target, event, "end", name);
+                }
+                const endGlobalListenerList = getListeners(null, event, "end");
+                for (const { name, filter, callback, once } of endGlobalListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    callback(eventInfo);
+                    if (once) off(null, event, "end", name)
+                }
+            },
+            after: () => {
+                _phase = "after"
+                const afterListenerList = getListeners(target, event, "after");
+                for (const { name, callback, filter, once } of afterListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    const result = callback(eventInfo)
+                    if (once) off(target, event, "after", name)
+                    if (!isPlainObject(result)) continue;
+                    const { event, ing, options } = result;
+                    if (typeof event !== "string") continue;
+                    dispatchSync(event, ing, options);
+                }
+                const afterGlobalListenerList = getListeners(null, event, "after");
+                for (const { name, filter, callback, once } of afterGlobalListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    const result = callback(eventInfo)
+                    if (once) off(target, event, "after", name)
+                    if (!isPlainObject(result)) continue;
+                    const { event, ing, options } = result;
+                    if (typeof event !== "string") continue;
+                    dispatchSync(event, ing, options);
+                }
+            },
+            error: (err) => {
+                const errorListenerList = getListeners(target, "error", _phase);
+                for (const { name, callback, filter, once } of errorListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    callback(eventInfo, err);
+                    if (once) off(target, "error", _phase, name);
+                }
+                const errorGlobalListenerList = getListeners(null, event, "error");
+                for (const { name, filter, callback, once } of errorGlobalListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    callback(eventInfo, err);
+                    if (once) off(target, "error", _phase, name);
+                }
             }
         }
         // 触发before阶段监听器，如果返回false且事件可取消则中断执行
-        const beforeEvent = assignWithDescriptors({
-            get phase() {
-                return "before"
+        try {
+            if (phaseManager.before() === false) {
+                currentEvent = currentEvent.parentEvent;
+                return;
             }
-        }, baseEvent)
-        const beforeListenerList = getListeners(target, event, "before");
-        for (const { name, filter, callback, once } of beforeListenerList.slice()) {
-            if (filter?.(beforeEvent) === false) continue;
-            const toCancel = callback(beforeEvent);
-            if (once) off(target, event, "before", name)
-            if (toCancel === false && beforeEvent.status.cancellable) return;
-        }
-        // 触发begin阶段监听器
-        const beginEvent = assignWithDescriptors({
-            get phase() {
-                return "begin"
-            }
-        }, baseEvent);
-        const beginListenerList = getListeners(target, event, "begin");
-        for (const { name, callback, filter, once } of beginListenerList.slice()) {
-            if (filter?.(beginEvent) === false) continue;
-            callback(beginEvent);
-            if (once) off(target, event, "begin", name);
-        }
-        // 执行ing阶段函数并获取当前数据
-        const ingEvent = assignWithDescriptors({
-            get phase() {
-                return "ing"
-            }
-        }, baseEvent)
-        const currentData = ing(ingEvent);
-        // 触发end阶段监听器
-        const endEvent = assignWithDescriptors({
-            get phase() {
-                return "end"
-            },
-            get currentData() {
-                return currentData
-            }
-        }, baseEvent)
-        const endListenerList = getListeners(target, event, "end");
-        for (const { name, callback, filter, once } of endListenerList.slice()) {
-            if (filter?.(endEvent) === false) continue;
-            callback(endEvent);
-            if (once) off(target, event, "end", name);
-        }
-        // 触发after阶段监听器，并处理可能的递归事件调用
-        const afterEvent = assignWithDescriptors({
-            get phase() {
-                return "after"
-            },
-            get currentData() {
-                return currentData
-            }
-        }, baseEvent);
-        const afterListenerList = getListeners(target, event, "after");
-        for (const { name, callback, filter, once } of afterListenerList.slice()) {
-            if (filter?.(afterEvent) === false) continue;
-            const result = callback(afterEvent)
-            if (once) off(target, event, "after", name)
-            if (!isPlainObject(result)) continue;
-            const { event, ing, options } = result;
-            if (typeof event !== "string") continue;
-            dispatchSync(event, ing, options);
+            phaseManager.begin();
+            phaseManager.ing();
+            phaseManager.end();
+            phaseManager.after();
+            currentEvent = currentEvent.parentEvent;
+        } catch (err) {
+            phaseManager.error(err);
+            currentEvent = currentEvent.parentEvent
         }
     }
     return {
@@ -270,6 +354,7 @@ export function createEventEmitter() {
         off
     }
 }
+const EVENT_ATTRIBUTE_SYMBOL = Symbol();
 /**
  * 创建一个只读的普通属性对象
  * @param {ReturnType<createEventEmitter>} emitter - 事件发射器（当前未使用，保留扩展性）
@@ -279,170 +364,187 @@ export function createEventEmitter() {
  * @param {any} [options.owner=null] - 属性所属对象
  * @returns {{ name: string, value: any, owner: any }}
  */
-export function createAttribute(emitter, name, options = {}) {
+export function createEventAttribute(name, options = {}) {
     throwIfIsNotString(name, "name");
     throwIfIsNotPlainObject(options, "options");
     const { value = null, owner = null } = options;
     const attributeObj = {
         name,
         value,
+        get() {
+            return attributeObj.value;
+        },
+        valueOf() {
+            return attributeObj.value;
+        },
+        [EVENT_ATTRIBUTE_SYMBOL]: "null",
         owner
     }
     makePropertyReadOnly(attributeObj, "name");
     return attributeObj;
 }
-/**
- * 创建一个数值型属性，支持 add/subtract/set 操作，并自动触发 changeValue 事件
- * @param {ReturnType<createEventEmitter>} emitter - 事件发射器
- * @param {string} name - 属性名称
- * @param {Object} [options] - 配置选项
- * @param {number} [options.value=0] - 初始值（非数字将被设为 0）
- * @param {number} [options.min=-Infinity] - 最小值
- * @param {number} [options.max=Infinity] - 最大值
- * @param {any} [options.owner=null] - 所属对象
- * @returns {{
- *   name: string,
- *   owner: any,
- *   value: number,
- *   get(): number,
- *   add(num: number): void,
- *   subtract(num: number): void,
- *   set(num: number): void
- * }}
- */
-export function createNumberAttribute(emitter, name, options = {}) {
-    throwIfIsNotString(name, "name");
-    throwIfIsNotPlainObject(options, "options");
-    let { value, min, max } = options;
-    if (Number.isNaN(value)) value = 0;
-    if (Number.isNaN(min)) min = -Infinity;
-    if (Number.isNaN(max)) max = Infinity;
-    const attr = createAttribute(emitter, name, options);
-    let _value = clamp(value, min, max);
-    return assignWithDescriptors(attr, {
+export function isEventAttribute(variable) {
+    return typeof variable === "object" && variable !== null && variable[EVENT_ATTRIBUTE_SYMBOL]
+}
+export function throwIfIsNotEventAttribute(variable, name = "variable") {
+    if (!isEventAttribute(variable)) throw new TypeError(`Expected ${name} to be a event attribute, but got ${variable}`);
+}
+export function getEventAttributeType(variable) {
+    throwIfIsNotEventAttribute(variable, "variable");
+    return variable[EVENT_ATTRIBUTE_SYMBOL];
+}
+const numberAttrMethods = [
+    "add",
+    "subtract",
+    "multiply",
+    "divide",
+    "pow",
+    "set"
+];
+const getIntegerStrategy = (integerStrategy) => {
+    switch (integerStrategy) {
+        case "floor":
+            return v => Math.floor(v);
+        case "ceil":
+            return v => Math.ceil(v);
+        case "round":
+            return v => Math.round(v);
+        case "trunc":
+            return v => Math.trunc(v);
+        default:
+            return v => v;
+    }
+}
+const getClampStrategy = (min, max) => {
+    if (typeof min === "number" && typeof max === "number") {
+        return v => clamp(v, min, max)
+    }
+    if (typeof min === "number" && typeof max === "function") {
+        return v => {
+            let M = Number(max()) || 0, m = min;
+            return clamp(v, m, M)
+        }
+    }
+    if (typeof min === "function" && typeof max === "number") {
+        return v => {
+            let M = max, m = Number(min()) || 0;
+            return clamp(v, m, M)
+        }
+    }
+    if (typeof min === "function" && typeof max === "function") {
+        return v => {
+            let M = Number(max()) || 0, m = Number(min()) || 0;
+            return clamp(v, m, M)
+        }
+    }
+    return v => v;
+}
+export function withNumberAction(emitter, attr, options = {}) {
+    throwIfIsNotPlainObject(emitter);
+    throwIfIsNotEventAttribute(attr);
+    throwIfIsNotPlainObject(options);
+    let { min = -Infinity, max = Infinity, integerStrategy = null } = options;
+    const toClamped = getClampStrategy(min, max);
+    const toInteger = getIntegerStrategy(integerStrategy);
+    let constrain = (v) => toInteger(toClamped(v));
+    let _value = isNaN(attr.value) ? 0 : Number(attr.value);
+    const numberAction = {
         get value() {
-            return _value
+            return _value;
         },
         get() {
-            return _value
+            return _value;
         },
-        add(num) {
-            throwIfIsNotComparableNumber(num)
-            emitter.dispatchSync(
-                "changeValue",
-                ({ preData, context: { num } }) => {
-                    _value = clamp(preData + num, min, max)
-                    return _value
-                },
-                { target: attr, type: "add", preData: _value, context: { num } }
-            )
-        },
-        subtract(num) {
-            throwIfIsNotComparableNumber(num)
-            emitter.dispatchSync(
-                "changeValue",
-                ({ preData, context: { num } }) => {
-                    _value = clamp(preData - num, min, max)
-                    return _value
-                },
-                { target: attr, type: "subtract", preData: _value, context: { num } }
-            )
-        },
-        set(num) {
+        add(num = 1) {
             throwIfIsNotComparableNumber(num)
             emitter.dispatchSync(
                 "changeValue",
                 ({ context: { num } }) => {
-                    _value = clamp(num, min, max)
-                    return _value
+                    _value += num;
+                    _value = constrain(_value);
+                    return _value;
+                },
+                { target: attr, type: "add", preData: _value, context: { num } }
+            )
+        },
+        subtract(num = 1) {
+            throwIfIsNotComparableNumber(num)
+            emitter.dispatchSync(
+                "changeValue",
+                ({ context: { num } }) => {
+                    _value -= num
+                    _value = constrain(_value);
+                    return _value;
+                },
+                { target: attr, type: "subtract", preData: _value, context: { num } }
+            )
+        },
+        multiply(num) {
+            throwIfIsNotComparableNumber(num);
+            emitter.dispatchSync(
+                "changeValue",
+                ({ context: { num } }) => {
+                    _value *= num
+                    _value = constrain(_value);
+                    return _value;
+                },
+                { target: attr, type: "multiply", preData: _value, context: { num } }
+            )
+        },
+        divide(num) {
+            throwIfIsNotDivisibleNumber(num);
+            emitter.dispatchSync(
+                "changeValue",
+                ({ context: { num } }) => {
+                    _value /= num
+                    _value = constrain(_value);
+                    return _value;
+                },
+                { target: attr, type: "divide", preData: _value, context: { num } }
+            )
+        },
+        pow(num) {
+            throwIfIsNotComparableNumber(num);
+            emitter.dispatchSync(
+                "changeValue",
+                ({ context: { num } }) => {
+                    _value = Math.pow(_value, num)
+                    _value = constrain(_value);
+                    return _value;
+                },
+                { target: attr, type: "pow", preData: _value, context: { num } }
+            )
+        },
+        set(num) {
+            throwIfIsNotComparableNumber(num);
+            emitter.dispatchSync(
+                "changeValue",
+                ({ context: { num } }) => {
+                    _value = num
+                    _value = constrain(_value);
+                    return _value;
                 },
                 { target: attr, type: "set", preData: _value, context: { num } }
             )
-        }
-    })
-}
-/**
- * 创建一个求和型属性，其值为多个数值属性的总和（受 min/max 限制）
- * 自动监听依赖属性的 changeValue 事件，并在变化时触发自身的 changeValue 事件
- * 注意：依赖属性的 changeValue 事件不应被取消，否则可能导致状态不一致
- *
- * @param {ReturnType<createEventEmitter>} emitter - 事件发射器
- * @param {string} name - 属性名称
- * @param {Object} options - 配置选项
- * @param {Array<{ get(): number }>} [options.attrs=[]] - 依赖的属性列表（需有 get 方法）
- * @param {number} [options.min=0] - 总和最小值
- * @param {number} [options.max=0] - 总和最大值
- * @param {any} [options.owner=null] - 所属对象
- * @returns {{
- *   name: string,
- *   owner: any,
- *   value: number,
- *   get(): number
- * }}
- */
-export function createSumAttribute(emitter, name, options = {}) {
-    throwIfIsNotString(name, "name");
-    throwIfIsNotPlainObject(options, "options");
-    let { attrs, min, max } = options;
-    if (!Array.isArray(attrs)) attrs = [];
-    if (Number.isNaN(min)) min = -Infinity;
-    if (Number.isNaN(max)) max = Infinity;
-    const attr = createAttribute(emitter, name, options);
-    let sumRecord = new Map();
-    for (const a of attrs) {
-        const listenerName = `${name}:${a.name}:sum:default`
-        emitter.on(a, "changeValue", "before", {
-            name: listenerName,
-            callback: ({ id }) => {
-                sumRecord.set(id, attr.get())
-            }
-        });
-        emitter.on(a, "changeValue", "after", {
-            name: listenerName,
-            filter: ({ id }) => sumRecord.has(id),
-            callback: ({ id }) => {
-                const from = sumRecord.get(id);
-                const to = attr.get();
-                sumRecord.delete(id);
-                return {
-                    event: "changeValue",
-                    options: {
-                        target: attr,
-                        status: {
-                            cancellable: false
-                        },
-                        context: {
-                            from,
-                            to,
-                        }
-                    },
-                }
-            }
-        })
-    }
-    return assignWithDescriptors(attr, {
-        get value() {
-            return clamp(attrs.reduce((s, a) => s + a.get(), 0), min, max)
         },
-        get() {
-            return clamp(attrs.reduce((s, a) => s + a.get(), 0), min, max)
+        changeConstrain(min = -Infinity, max = Infinity, integerStrategy = null) {
+            const toClamped = getClampStrategy(min, max);
+            const toInteger = getIntegerStrategy(integerStrategy);
+            constrain = (v) => toInteger(toClamped(v));
+        },
+        [EVENT_ATTRIBUTE_SYMBOL]: "number",
+    }
+    if (Array.isArray(options.exclude)) {
+        const excludeKeyList = options.exclude.filter(k => numberAttrMethods.includes(k))
+        for (const key of excludeKeyList) {
+            delete numberAction[key];
         }
-    })
+    }
+    return assignWithDescriptors(attr, numberAction)
 }
-/**
- * 创建一个属性生成器对象，绑定了指定的事件发射器
- * 该生成器提供了创建不同类型属性的方法，所有创建的属性都会与给定的事件发射器关联
- * 
- * @param {ReturnType<createEventEmitter>} emitter - 事件发射器，用于与创建的属性进行关联
- * @returns {Object} 返回一个包含属性创建方法的对象
- * @returns {Function} return.createAttribute - 创建基本属性的函数
- * @returns {Function} return.createNumberAttribute - 创建数值属性的函数
- * @returns {Function} return.createSumAttribute - 创建求和属性的函数
- */
+
 export function withEmitterAttributeGenerator(emitter) {
     return {
-        createAttribute: createAttribute.bind(null, emitter),
-        createNumberAttribute: createNumberAttribute.bind(null, emitter),
-        createSumAttribute: createSumAttribute.bind(null, emitter)
+        withNumberAction: withNumberAction.bind(null, emitter)
     }
 }

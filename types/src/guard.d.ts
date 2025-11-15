@@ -1,11 +1,24 @@
 /**
+ * 检查变量是否为 null 或 undefined
+ * @param {*} variable - 需要检查的变量
+ * @returns {boolean} 如果变量为 null 或 undefined 返回 true，否则返回 false
+ */
+export function isNullishValue(variable: any): boolean;
+/**
+ * 检查变量是否为可比较的数字（不是 NaN）
+ * @param {*} variable - 需要检查的变量
+ * @returns {boolean} 如果变量是数字且不是 NaN 返回 true，否则返回 false
+ */
+export function isComparableNumber(variable: any): boolean;
+export function isDivisibleNumber(variable: any): boolean;
+/**
  * 检查给定对象是否为普通对象
  * 普通对象是指通过对象字面量 {} 或 new Object() 创建的对象，
  * 不包括数组、函数以及其他自定义构造函数创建的实例
- * @param {*} obj - 需要检查的对象
+ * @param {*} variable - 需要检查的对象
  * @returns {boolean} 如果是普通对象返回 true，否则返回 false
  */
-export function isPlainObject(obj: any): boolean;
+export function isPlainObject(variable: any): boolean;
 /**
  * 检查变量是否为期望值之一，如果不是则抛出类型错误
  * @param {*} variable - 要检查的变量
@@ -57,6 +70,7 @@ export function throwIfIsNotComparableNumber(variable: any, name?: string): void
  * @throws {TypeError} 当变量不是有限数字时抛出类型错误
  */
 export function throwIfIsNotFiniteNumber(variable: any, name?: string): void;
+export function throwIfIsNotDivisibleNumber(variable: any, name?: string): void;
 /**
  * 检查变量是否为正有限数
  * @param {*} variable - 要检查的变量
@@ -260,6 +274,7 @@ export function throwIfIsNotComparableNumberArray(variable: any, name?: string, 
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、-Infinity
  */
 export function throwIfIsNotFiniteNumberArray(variable: any, name?: string, generalTerm?: string): void;
+export function throwIfIsNotDivisibleNumberArray(variable: any, name?: string, generalTerm?: string): void;
 /**
  * 校验变量是否为仅包含正有限数（> 0 的有限 number）的数组。
  * @param {*} variable - 待校验的变量

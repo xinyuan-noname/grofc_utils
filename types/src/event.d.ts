@@ -49,6 +49,7 @@
  * @property {function(BaseEvent): boolean} [filter] - 过滤函数，返回 false 则跳过此监听器
  * @property {function(BeforeEvent|BeginEvent|EndEvent|AfterEvent): void | RecursiveDispatchResult} callback - 回调函数
  * @property {boolean} [once=false] - 是否仅触发一次，触发后自动移除
+ * @property {number} [priority=0] - 触发的优先级，默认为0，默认按顺序执行
  */
 /**
  * 在 after 阶段，callback 可返回此结构以触发新的同步事件
@@ -66,7 +67,6 @@
  * - **ing**: 核心逻辑执行，由用户传入的 ing 函数处理
  * - **end**: 处理 ing 结果
  * - **after**: 清理或触发后续事件，支持递归 dispatch
- *
  * @returns {{
  *   dispatchSync: (
  *     event: string,
@@ -117,7 +117,7 @@ export function createEventEmitter(): {
  * @param {any} [options.owner=null] - 属性所属对象
  * @returns {{ name: string, value: any, owner: any }}
  */
-export function createAttribute(emitter: ReturnType<typeof createEventEmitter>, name: string, options?: {
+export function createEventAttribute(name: string, options?: {
     value?: any;
     owner?: any;
 }): {
@@ -125,82 +125,13 @@ export function createAttribute(emitter: ReturnType<typeof createEventEmitter>, 
     value: any;
     owner: any;
 };
-/**
- * 创建一个数值型属性，支持 add/subtract/set 操作，并自动触发 changeValue 事件
- * @param {ReturnType<createEventEmitter>} emitter - 事件发射器
- * @param {string} name - 属性名称
- * @param {Object} [options] - 配置选项
- * @param {number} [options.value=0] - 初始值（非数字将被设为 0）
- * @param {number} [options.min=-Infinity] - 最小值
- * @param {number} [options.max=Infinity] - 最大值
- * @param {any} [options.owner=null] - 所属对象
- * @returns {{
- *   name: string,
- *   owner: any,
- *   value: number,
- *   get(): number,
- *   add(num: number): void,
- *   subtract(num: number): void,
- *   set(num: number): void
- * }}
- */
-export function createNumberAttribute(emitter: ReturnType<typeof createEventEmitter>, name: string, options?: {
-    value?: number | undefined;
-    min?: number | undefined;
-    max?: number | undefined;
-    owner?: any;
-}): {
-    name: string;
-    owner: any;
-    value: number;
-    get(): number;
-    add(num: number): void;
-    subtract(num: number): void;
-    set(num: number): void;
+export function isEventAttribute(variable: any): any;
+export function throwIfIsNotEventAttribute(variable: any, name?: string): void;
+export function getEventAttributeType(variable: any): any;
+export function withNumberAction(emitter: any, attr: any, options?: {}): void;
+export function withEmitterAttributeGenerator(emitter: any): {
+    withNumberAction: (attr?: any, options?: {} | undefined) => void;
 };
-/**
- * 创建一个求和型属性，其值为多个数值属性的总和（受 min/max 限制）
- * 自动监听依赖属性的 changeValue 事件，并在变化时触发自身的 changeValue 事件
- * 注意：依赖属性的 changeValue 事件不应被取消，否则可能导致状态不一致
- *
- * @param {ReturnType<createEventEmitter>} emitter - 事件发射器
- * @param {string} name - 属性名称
- * @param {Object} options - 配置选项
- * @param {Array<{ get(): number }>} [options.attrs=[]] - 依赖的属性列表（需有 get 方法）
- * @param {number} [options.min=0] - 总和最小值
- * @param {number} [options.max=0] - 总和最大值
- * @param {any} [options.owner=null] - 所属对象
- * @returns {{
- *   name: string,
- *   owner: any,
- *   value: number,
- *   get(): number
- * }}
- */
-export function createSumAttribute(emitter: ReturnType<typeof createEventEmitter>, name: string, options?: {
-    attrs?: {
-        get(): number;
-    }[] | undefined;
-    min?: number | undefined;
-    max?: number | undefined;
-    owner?: any;
-}): {
-    name: string;
-    owner: any;
-    value: number;
-    get(): number;
-};
-/**
- * 创建一个属性生成器对象，绑定了指定的事件发射器
- * 该生成器提供了创建不同类型属性的方法，所有创建的属性都会与给定的事件发射器关联
- *
- * @param {ReturnType<createEventEmitter>} emitter - 事件发射器，用于与创建的属性进行关联
- * @returns {Object} 返回一个包含属性创建方法的对象
- * @returns {Function} return.createAttribute - 创建基本属性的函数
- * @returns {Function} return.createNumberAttribute - 创建数值属性的函数
- * @returns {Function} return.createSumAttribute - 创建求和属性的函数
- */
-export function withEmitterAttributeGenerator(emitter: ReturnType<typeof createEventEmitter>): Object;
 /**
  * 表示一个只读的事件对象，包含事件的基本信息。
  * 所有字段均为 getter，返回副本以防止外部修改。
@@ -295,6 +226,10 @@ export type Listener = {
      * - 是否仅触发一次，触发后自动移除
      */
     once?: boolean | undefined;
+    /**
+     * - 触发的优先级，默认为0，默认按顺序执行
+     */
+    priority?: number | undefined;
 };
 /**
  * 在 after 阶段，callback 可返回此结构以触发新的同步事件

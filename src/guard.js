@@ -73,10 +73,13 @@ export function isDivisibleNumber(variable) {
  * @returns {boolean} 如果是普通对象返回 true，否则返回 false
  */
 export function isPlainObject(variable) {
-    if (typeof variable !== "object" || variable === null) return false;
+    if (Object.prototype.toString.call(variable) !== "[object Object]") return false;
     const prototype = Object.getPrototypeOf(variable);
     if (prototype !== Object.prototype && prototype !== null) return false;
     return true
+}
+export function isRegExp(variable) {
+    return Object.prototype.toString.call(variable) === "[object RegExp]"
 }
 
 // ------------------------------------------------
@@ -92,7 +95,7 @@ export function isPlainObject(variable) {
 export function throwIfIsNotExpectedValue(variable, name = "variable", ...expectedValues) {
     safeGuardExecute(throwIfIsNotNonEmptyArray, expectedValues)
     if (!expectedValues.includes(variable)) {
-        throwTypeErrorGiveType(variable, name, ...expectedValues);
+        throwTypeErrorGiveValue(variable, name, ...expectedValues);
     }
 }
 /**
@@ -106,7 +109,7 @@ export function throwIfIsUnExpectedValue(variable, name = "variable", ...unexpec
     safeGuardExecute(throwIfIsNotNonEmptyArray, unexpectedValues)
     if (unexpectedValues.includes(variable)) {
         const [f, ...upexpedValuesWf] = unexpectedValues;
-        throwTypeErrorGiveType(variable, name, `not ${f}`, ...upexpedValuesWf);
+        throwTypeErrorGiveValue(variable, name, `not ${f}`, ...upexpedValuesWf);
     }
 }
 /**
@@ -606,7 +609,7 @@ export function throwIfIsNotDivisibleNumberArray(variable, name = "variable", ge
             const desc = e > 0 ? "Infinity" : "-Infinity";
             throwTypeErrorForArray(generalTerm, acceptType, desc);
         }
-        if(e===0){
+        if (e === 0) {
             throwTypeErrorForArray(generalTerm, acceptType, "zero");
         }
     }

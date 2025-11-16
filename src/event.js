@@ -2,7 +2,8 @@ import {
     isNullishValue, isPlainObject,
     throwIfIsNotDivisibleNumber, throwIfIsNotComparableNumber, throwIfIsNotExpectedValue,
     throwIfIsNotFunction, throwIfIsNotPlainObject, throwIfIsNotString, throwIfSomeKeysMissing,
-    throwIfIsNotNonNegativeFiniteNumber
+    throwIfIsNotNonNegativeFiniteNumber,
+    throwIfIsNotNonEmptyArray
 } from "./guard.js"
 import { clamp } from "./number.js";
 import { assignWithDescriptors, makePropertyReadOnly } from "./object.js";
@@ -151,7 +152,7 @@ export function createEventEmitter() {
     const on = (target, event, phase, listener = {}) => {
         throwIfIsNotString(event, "event");
         event === "error" ?
-            throwIfIsNotExpectedValue(phase, "phase", "before", "ing", "begin", "end", "after")
+            throwIfIsNotExpectedValue(phase, "phase", "before", "ing", "begin", "end", "after", "all")
             : throwIfIsNotExpectedValue(phase, "phase", "before", "begin", "end", "after");
         throwIfSomeKeysMissing(listener, ["name", "callback"], "listener");
         let { priority } = listener
@@ -164,12 +165,11 @@ export function createEventEmitter() {
         const eventName = `${event}:${phase}`;
         const targetMap = getOrCreateTargetMap(target);
         const list = targetMap.get(eventName) || [];
-        for (let i = 0; i < list.length; i++) {
-            if ((list[i].priority ?? 0) > priority) {
-                list.splice(i, 0, listener);
-                break;
-            }
+        let i = 0;
+        while (i < list.length && (list[i].priority ?? 0) > priority) {
+            i++
         }
+        list.splice(i, 0, listener);
         targetMap.set(eventName, list);
         return () => {
             const index = list.findIndex(l => l === listener);
@@ -180,7 +180,7 @@ export function createEventEmitter() {
     const off = (target, event, phase, name) => {
         throwIfIsNotString(event, "event");
         event === "error" ?
-            throwIfIsNotExpectedValue(phase, "phase", "before", "ing", "begin", "end", "after")
+            throwIfIsNotExpectedValue(phase, "phase", "before", "ing", "begin", "end", "after", "all")
             : throwIfIsNotExpectedValue(phase, "phase", "before", "begin", "end", "after");
         throwIfIsNotString(name, "name");
         target ??= defaultTarget
@@ -324,11 +324,23 @@ export function createEventEmitter() {
                     callback(eventInfo, err);
                     if (once) off(target, "error", _phase, name);
                 }
-                const errorGlobalListenerList = getListeners(null, event, "error");
+                const allErrorListenerList = getListeners(target, "error", "all");
+                for (const { name, callback, filter, once } of allErrorListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    callback(eventInfo, err);
+                    if (once) off(target, "error", "all", name);
+                }
+                const errorGlobalListenerList = getListeners(null, "error", _phase);
                 for (const { name, filter, callback, once } of errorGlobalListenerList.slice()) {
                     if (filter?.(eventInfo) === false) continue;
                     callback(eventInfo, err);
                     if (once) off(target, "error", _phase, name);
+                }
+                const allErrorGlobalListenerList = getListeners(null, "error", "all");
+                for (const { name, filter, callback, once } of allErrorGlobalListenerList.slice()) {
+                    if (filter?.(eventInfo) === false) continue;
+                    callback(eventInfo, err);
+                    if (once) off(target, "error", "all", name);
                 }
             }
         }
@@ -355,6 +367,7 @@ export function createEventEmitter() {
     }
 }
 const EVENT_ATTRIBUTE_SYMBOL = Symbol();
+const EVENT_COLLECTION_ATTRIBUTE_TYPE = ["NULL_COLLECTTION", "NUMBER_COLLECTION", "STRING_COLLECTION"]
 /**
  * 创建一个只读的普通属性对象
  * @param {ReturnType<createEventEmitter>} emitter - 事件发射器（当前未使用，保留扩展性）
@@ -377,21 +390,38 @@ export function createEventAttribute(name, options = {}) {
         valueOf() {
             return attributeObj.value;
         },
-        [EVENT_ATTRIBUTE_SYMBOL]: "null",
+        [EVENT_ATTRIBUTE_SYMBOL]: "NULL",
         owner
     }
     makePropertyReadOnly(attributeObj, "name");
     return attributeObj;
 }
 export function isEventAttribute(variable) {
-    return typeof variable === "object" && variable !== null && variable[EVENT_ATTRIBUTE_SYMBOL]
+    return isPlainObject(variable) && variable[EVENT_ATTRIBUTE_SYMBOL];
 }
-export function throwIfIsNotEventAttribute(variable, name = "variable") {
-    if (!isEventAttribute(variable)) throw new TypeError(`Expected ${name} to be a event attribute, but got ${variable}`);
+export function isEventCollectionAttribute(variable) {
+    return isEventAttribute(variable) && EVENT_COLLECTION_ATTRIBUTE_TYPE.includes(getEventAttributeType(variable));
 }
 export function getEventAttributeType(variable) {
     throwIfIsNotEventAttribute(variable, "variable");
     return variable[EVENT_ATTRIBUTE_SYMBOL];
+}
+export function throwIfIsNotEventAttribute(variable, name = "variable") {
+    if (!isEventAttribute(variable)) throw new TypeError(`Expected ${name} to be a event attribute, but got ${variable}.`);
+}
+export function throwIfIsNotExpectedTypeEventAttribute(variable, expectedType, name = "variable") {
+    throwIfIsNotEventAttribute(variable, name)
+    const type = getEventAttributeType(variable);
+    if (type !== expectedType) throw new TypeError(`Expected ${name} to be a null event attribute, but got a ${type} event attribute.`);
+}
+export function throwIfIsNotEventNullAttribute(variable, name = "variable") {
+    throwIfIsNotExpectedTypeEventAttribute(variable, "NULL", name);
+}
+export function throwIfIsNotEventCollectionAttribute(variable, name = "variable") {
+    if (!isEventAttribute(variable)) throw new TypeError(`Expected ${name} to be a event collection attribute, but got ${variable}.`);
+}
+export function throwIfIsNotEventNullCollectionAttribute(variable, name = "variable") {
+    throwIfIsNotExpectedTypeEventAttribute(variable, "NULL_COLLECTION", name);
 }
 const numberAttrMethods = [
     "add",
@@ -439,9 +469,20 @@ const getClampStrategy = (min, max) => {
     }
     return v => v;
 }
+/**
+ * 为事件属性添加数值操作功能，使其能够进行加减乘除、幂运算等数学操作，并支持数值约束
+ * @param {ReturnType<createEventEmitter>} emitter - 事件发射器，用于派发数值变更事件
+ * @param {*} attr - 事件属性对象，必须是有效的事件属性
+ * @param {Object} [options={}] - 配置选项
+ * @param {number} [options.min=-Infinity] - 最小值限制
+ * @param {number} [options.max=Infinity] - 最大值限制
+ * @param {"floor"|"ceil"|"round"|"trunc"|null} [options.integerStrategy=null] - 整数化策略，可选 "floor"、"ceil"、"round"、"trunc" 或 null
+ * @param {string[]} [options.exclude] - 要排除的方法列表
+ * @returns {*} 返回扩展了数值操作功能的属性对象
+ */
 export function withNumberAction(emitter, attr, options = {}) {
     throwIfIsNotPlainObject(emitter);
-    throwIfIsNotEventAttribute(attr);
+    throwIfIsNotEventAttribute(attr, "attr");
     throwIfIsNotPlainObject(options);
     let { min = -Infinity, max = Infinity, integerStrategy = null } = options;
     const toClamped = getClampStrategy(min, max);
@@ -532,7 +573,7 @@ export function withNumberAction(emitter, attr, options = {}) {
             const toInteger = getIntegerStrategy(integerStrategy);
             constrain = (v) => toInteger(toClamped(v));
         },
-        [EVENT_ATTRIBUTE_SYMBOL]: "number",
+        [EVENT_ATTRIBUTE_SYMBOL]: "NUMBER",
     }
     if (Array.isArray(options.exclude)) {
         const excludeKeyList = options.exclude.filter(k => numberAttrMethods.includes(k))
@@ -542,9 +583,280 @@ export function withNumberAction(emitter, attr, options = {}) {
     }
     return assignWithDescriptors(attr, numberAction)
 }
-
+export function withStringAction(emitter, attr, options = {}) {
+    throwIfIsNotPlainObject(emitter);
+    throwIfIsNotEventAttribute(attr, "attr");
+    throwIfIsNotPlainObject(options);
+    let { validate: _validate } = options;
+    let _value = String(attr.value);
+    const stringAction = {
+        get value() {
+            return _value;
+        },
+        get() {
+            return _value;
+        },
+        toString() {
+            return _value;
+        },
+        set(str) {
+            if (typeof _validate === "function") {
+                const { ok, error } = _validate(str);
+                if (!ok) {
+                    if (error instanceof Error) throw error;
+                    throw new Error(error || "Validation error")
+                };
+            }
+            emitter.dispatchSync(
+                "changeValue",
+                ({ context: { str } }) => {
+                    _value = str
+                    return _value;
+                },
+                { target: attr, type: "set", preData: _value, context: { str } }
+            )
+        },
+        changeValidate(validate) {
+            _validate = validate;
+        },
+        [EVENT_ATTRIBUTE_SYMBOL]: "STRING",
+    }
+    return assignWithDescriptors(attr, stringAction)
+}
+const statusAttrMethods = [
+    "changeStatus",
+    "changeToNextStatus",
+    "changeToLastStatus"
+]
+/**
+ * @template T
+ * @param {*} emitter 
+ * @param {*} attr 
+ * @param {{
+ *  preStatus:T
+ *  statusList:T[]
+ * }} options 
+ * @returns 
+ */
+export function withStatusAction(emitter, attr, options = {}) {
+    throwIfIsNotPlainObject(emitter);
+    throwIfIsNotEventAttribute(attr);
+    throwIfSomeKeysMissing(options, ["statusList"], "options");
+    throwIfIsNotNonEmptyArray(options.statusList, "options.statusList")
+    const { preStatus, statusList } = options;
+    let _status = preStatus || statusList[0];
+    const statusAction = {
+        get status() {
+            return _status;
+        },
+        changeStatus(toStatus) {
+            throwIfIsNotExpectedValue(toStatus, "status", ...statusList);
+            emitter.dispatchSync(
+                "changeStatus",
+                ({ context: { toStatus } }) => {
+                    _status = toStatus;
+                    return _status;
+                },
+                { target: attr, type: "to", preData: _status, context: { toStatus } }
+            )
+        },
+        changeToNextStatus() {
+            emitter.dispatchSync(
+                "changeStatus",
+                () => {
+                    const index = statusList.indexOf(_status);
+                    if (index === -1) _status = statusList[0];
+                    else _status = statusList[index + 1] || statusList[0];
+                    return _status;
+                },
+                { target: attr, type: "next", preData: _status, context: {} }
+            )
+        },
+        changeToLastStatus() {
+            emitter.dispatchSync(
+                "changeStatus",
+                () => {
+                    const index = statusList.indexOf(_status);
+                    if (index === -1) _status = statusList[0];
+                    else _status = statusList[index - 1] || statusList[statusList.length - 1];
+                    return _status;
+                },
+                { target: attr, type: "last", preData: _status, context: {} }
+            )
+        },
+    }
+    if (Array.isArray(options.exclude)) {
+        const excludeKeyList = options.exclude.filter(k => statusAttrMethods.includes(k))
+        for (const key of excludeKeyList) {
+            delete statusAction[key];
+        }
+    }
+    return assignWithDescriptors(attr, statusAction)
+}
+export function withCollectionAction(emitter, attr, options = {}) {
+    throwIfIsNotPlainObject(emitter);
+    throwIfIsNotEventAttribute(attr, "attr");
+    throwIfIsNotPlainObject(options);
+    const _value = [];
+    let { validate: _validate } = options;
+    const collectionAction = {
+        add(...elements) {
+            const toAddElements = [];
+            for (const e of elements) {
+                if (!isEventAttribute(e)) throw new Error(`All elements must be event attribute!`);
+                if (typeof _validate === "function") {
+                    const { ok, error } = _validate(e);
+                    if (!ok) {
+                        if (error instanceof Error) throw error;
+                        throw new Error(error || "Validation error")
+                    };
+                }
+                if (!_value.includes(e)) toAddElements.push(e);
+            }
+            emitter.dispatchSync(
+                "changeCollection",
+                ({ context: { elements } }) => {
+                    _value.push(...elements);
+                    return _value.slice();
+                },
+                { target: attr, type: "add", preData: _value.slice(), context: { elements: toAddElements } }
+            )
+        },
+        remove(...elements) {
+            for (const e of elements) {
+                if (!isEventAttribute(e)) throw new Error(`All elements must be event attribute!`);
+                if (typeof _validate === "function") {
+                    const { ok, error } = _validate(e);
+                    if (!ok) {
+                        if (error instanceof Error) throw error;
+                        throw new Error(error || "Validation error")
+                    };
+                }
+            }
+            emitter.dispatchSync(
+                "changeCollection",
+                ({ context: { elements } }) => {
+                    for (const e of elements) {
+                        const i = _value.indexOf(e);
+                        if (i !== -1) _value.splice(i, 1);
+                    }
+                    return _value.slice();
+                },
+                { target: attr, type: "remove", preData: _value.slice(), context: { elements } }
+            )
+        },
+        replace(...elements) {
+            for (const e of elements) {
+                if (!isEventAttribute(e)) throw new Error(`All elements must be event attribute!`);
+                if (typeof _validate === "function") {
+                    const { ok, error } = _validate(e);
+                    if (!ok) {
+                        if (error instanceof Error) throw error;
+                        throw new Error(error || "Validation error")
+                    };
+                }
+            }
+            emitter.dispatchSync(
+                "changeCollection",
+                ({ context: { elements } }) => {
+                    _value.splice(0, _value.length, ...elements);
+                    return _value.slice();
+                },
+                { target: attr, type: "replace", preData: _value.slice(), context: { elements: Array.from(new Set(elements)) } }
+            )
+        },
+        issue(order, filter, ...orderInfo) {
+            const targets = typeof filter === "function" ? _value.filter(filter) : _value.slice();
+            if (typeof filter === "function")
+                emitter.dispatchSync(
+                    "issueOrder",
+                    ({ context: { order, targets, orderInfo } }) => {
+                        targets.forEach(t => {
+                            t?.[order]?.(...orderInfo);
+                        })
+                    },
+                    { target: attr, type: "collection", context: { order, targets, orderInfo } }
+                )
+        },
+        values() {
+            return _value.map(v => v.value);
+        },
+        get() {
+            return _value.slice();
+        },
+        get value() {
+            return _value.slice();
+        },
+        get length() {
+            return _value.length;
+        },
+        *[Symbol.iterator]() {
+            for (const e of _value) {
+                yield e;
+            }
+        },
+        [EVENT_ATTRIBUTE_SYMBOL]: "NULL_COLLECTION",
+    }
+    return assignWithDescriptors(attr, collectionAction);
+}
+export function withNumberCollectionAction(emitter, attr, options = {}) {
+    throwIfIsNotPlainObject(emitter);
+    throwIfIsNotEventNullCollectionAttribute(attr, "attr")
+    throwIfIsNotPlainObject(options);
+    const changeValidatePre = attr.changeValidate;
+    const numberCollectionAction = {
+        sum() {
+            return attr.values().reduce((p, c) => p + c, 0);
+        },
+        changeValidate(validate) {
+            changeValidatePre((e) => {
+                if (getEventAttributeType(e) !== "NUMBER") return { ok: false, error: new Error("All elements must be number event attribute!") }
+                return validate(e);
+            })
+        },
+        [EVENT_ATTRIBUTE_SYMBOL]: "NUMBER_COLLECTION",
+    }
+    return assignWithDescriptors(attr, numberCollectionAction);
+}
+export function withStringCollectionAction(emitter, attr, options = {}) {
+    throwIfIsNotPlainObject(emitter);
+    throwIfIsNotEventNullCollectionAttribute(attr, "attr")
+    throwIfIsNotPlainObject(options);
+    const changeValidatePre = attr.changeValidate;
+    const stringCollectionAction = {
+        count(str) {
+            return attr.values().reduce((p, c) => p + (c === str), 0);
+        },
+        changeValidate(validate) {
+            changeValidatePre((e) => {
+                if (getEventAttributeType(e) !== "STRING") return { ok: false, error: new Error("All elements must be string event attribute!") }
+                return validate(e);
+            })
+        },
+        [EVENT_ATTRIBUTE_SYMBOL]: "STRING_COLLECTION",
+    }
+    return assignWithDescriptors(attr, stringCollectionAction);
+}
+export function withStatusCollectionAction(emitter, attr, options = {}) {
+    throwIfIsNotPlainObject(emitter);
+    throwIfIsNotEventCollectionAttribute(attr, "attr")
+    throwIfIsNotPlainObject(options);
+    const stringCollectionAction = {
+        countSatus(status) {
+            return attr.values().reduce((p, c) => p + (c === status), 0);
+        },
+        [EVENT_ATTRIBUTE_SYMBOL]: "STRING_COLLECTION",
+    }
+    return assignWithDescriptors(attr, stringCollectionAction);
+}
 export function withEmitterAttributeGenerator(emitter) {
     return {
-        withNumberAction: withNumberAction.bind(null, emitter)
+        withNumberAction: withNumberAction.bind(null, emitter),
+        withStatusAction: withStatusAction.bind(null, emitter),
+        withStringAction: withStringAction.bind(null, emitter),
+        withCollectionAction: withCollectionAction.bind(null, emitter),
+        withNumberCollectionAction: withNumberCollectionAction.bind(null, emitter),
+        withStringCollectionAction: withStringCollectionAction.bind(null, emitter),
+        withStatusCollectionAction: withStatusCollectionAction.bind(null, emitter),
     }
 }

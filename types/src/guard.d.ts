@@ -19,6 +19,7 @@ export function isDivisibleNumber(variable: any): boolean;
  * @returns {boolean} 如果是普通对象返回 true，否则返回 false
  */
 export function isPlainObject(variable: any): boolean;
+export function isRegExp(variable: any): boolean;
 /**
  * 检查变量是否为期望值之一，如果不是则抛出类型错误
  * @param {*} variable - 要检查的变量

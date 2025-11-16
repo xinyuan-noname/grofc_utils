@@ -126,11 +126,65 @@ export function createEventAttribute(name: string, options?: {
     owner: any;
 };
 export function isEventAttribute(variable: any): any;
-export function throwIfIsNotEventAttribute(variable: any, name?: string): void;
+export function isEventCollectionAttribute(variable: any): any;
 export function getEventAttributeType(variable: any): any;
-export function withNumberAction(emitter: any, attr: any, options?: {}): void;
+export function throwIfIsNotEventAttribute(variable: any, name?: string): void;
+export function throwIfIsNotExpectedTypeEventAttribute(variable: any, expectedType: any, name?: string): void;
+export function throwIfIsNotEventNullAttribute(variable: any, name?: string): void;
+export function throwIfIsNotEventCollectionAttribute(variable: any, name?: string): void;
+export function throwIfIsNotEventNullCollectionAttribute(variable: any, name?: string): void;
+/**
+ * 为事件属性添加数值操作功能，使其能够进行加减乘除、幂运算等数学操作，并支持数值约束
+ * @param {ReturnType<createEventEmitter>} emitter - 事件发射器，用于派发数值变更事件
+ * @param {*} attr - 事件属性对象，必须是有效的事件属性
+ * @param {Object} [options={}] - 配置选项
+ * @param {number} [options.min=-Infinity] - 最小值限制
+ * @param {number} [options.max=Infinity] - 最大值限制
+ * @param {"floor"|"ceil"|"round"|"trunc"|null} [options.integerStrategy=null] - 整数化策略，可选 "floor"、"ceil"、"round"、"trunc" 或 null
+ * @param {string[]} [options.exclude] - 要排除的方法列表
+ * @returns {*} 返回扩展了数值操作功能的属性对象
+ */
+export function withNumberAction(emitter: ReturnType<typeof createEventEmitter>, attr: any, options?: {
+    min?: number | undefined;
+    max?: number | undefined;
+    integerStrategy?: "floor" | "ceil" | "round" | "trunc" | null | undefined;
+    exclude?: string[] | undefined;
+}): any;
+export function withStringAction(emitter: any, attr: any, options?: {}): void;
+/**
+ * @template T
+ * @param {*} emitter
+ * @param {*} attr
+ * @param {{
+ *  preStatus:T
+ *  statusList:T[]
+ * }} options
+ * @returns
+ */
+export function withStatusAction<T>(emitter: any, attr: any, options?: {
+    preStatus: T;
+    statusList: T[];
+}): void;
+export function withCollectionAction(emitter: any, attr: any, options?: {}): void;
+export function withNumberCollectionAction(emitter: any, attr: any, options?: {}): void;
+export function withStringCollectionAction(emitter: any, attr: any, options?: {}): void;
+export function withStatusCollectionAction(emitter: any, attr: any, options?: {}): void;
 export function withEmitterAttributeGenerator(emitter: any): {
-    withNumberAction: (attr?: any, options?: {} | undefined) => void;
+    withNumberAction: (attr: any, options?: {
+        min?: number | undefined;
+        max?: number | undefined;
+        integerStrategy?: "floor" | "ceil" | "round" | "trunc" | null | undefined;
+        exclude?: string[] | undefined;
+    } | undefined) => any;
+    withStatusAction: (attr: any, options?: {
+        preStatus: unknown;
+        statusList: unknown[];
+    } | undefined) => void;
+    withStringAction: (attr?: any, options?: {} | undefined) => void;
+    withCollectionAction: (attr?: any, options?: {} | undefined) => void;
+    withNumberCollectionAction: (attr?: any, options?: {} | undefined) => void;
+    withStringCollectionAction: (attr?: any, options?: {} | undefined) => void;
+    withStatusCollectionAction: (attr?: any, options?: {} | undefined) => void;
 };
 /**
  * 表示一个只读的事件对象，包含事件的基本信息。

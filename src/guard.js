@@ -38,6 +38,10 @@ const throwTypeErrorGiveValue = (variable, name = "variable", ...acceptableValue
     if (acceptableValueDescs.length === 1) throw TypeError(`Expected ${name} to be ${acceptableValueDescs}, but got ${variable}.`)
     else if (acceptableValueDescs.length > 1) throw TypeError(`Expected ${name} to be ${acceptableValueDescs.slice(0, -1).join(" ,")} or ${acceptableValueDescs[acceptableValueDescs.length - 1]}, but got ${variable}.`)
 }
+const throwTypeErrorForUnexpectedValue = (variable, name, ...unexpectedValues) => {
+    if (unexpectedValues.length === 1) throw TypeError(`Expected ${name} not to be ${unexpectedValues}, but got ${variable}.`)
+    else if (unexpectedValues.length > 1) throw new TypeError(`Expected ${name} not to be ${unexpectedValues.slice(0, -1).join(" ,")} or ${unexpectedValues[unexpectedValues.length - 1]},, but got ${variable}.`);
+};
 const throwTypeErrorForArray = (name = "variable", acceptableTypeDesc, unexpectedElementDesc) => {
     throw TypeError(`Expected all elements of ${name} to be ${acceptableTypeDesc}, but found ${unexpectedElementDesc}.`)
 }
@@ -108,8 +112,7 @@ export function throwIfIsNotExpectedValue(variable, name = "variable", ...expect
 export function throwIfIsUnExpectedValue(variable, name = "variable", ...unexpectedValues) {
     safeGuardExecute(throwIfIsNotNonEmptyArray, unexpectedValues)
     if (unexpectedValues.includes(variable)) {
-        const [f, ...upexpedValuesWf] = unexpectedValues;
-        throwTypeErrorGiveValue(variable, name, `not ${f}`, ...upexpedValuesWf);
+        throwTypeErrorForUnexpectedValue(variable, name, unexpectedValues);
     }
 }
 /**
@@ -120,7 +123,7 @@ export function throwIfIsUnExpectedValue(variable, name = "variable", ...unexpec
  */
 export function throwIfIsNullishValue(variable, name = "variable") {
     if (variable == null) {
-        throwTypeErrorGiveValue(variable, name, "not null or undefined")
+        throwTypeErrorGiveValue(variable, name, null, undefined)
     }
 }
 
@@ -471,7 +474,7 @@ export function throwIfIsNotArray(variable, name = "variable") {
 export function throwIfIsNotNonEmptyArray(variable, name = "variable") {
     throwIfIsNotArray(variable, name);
     if (variable.length === 0) {
-        throw new Error(`Expected ${variable} to have at least one item, but got zero.`)
+        throw new Error(`Expected ${name} to have at least one item, but got zero.`)
     }
 }
 
@@ -534,7 +537,7 @@ export function throwIfIsNotPlainObjectArray(variable, name = "variable", genera
     throwIfIsNotArray(variable, name);
     const acceptType = "plain objects";
     for (const e of variable) {
-        if (isPlainObject(variable)) {
+        if (!isPlainObject(variable)) {
             throwTypeErrorForArray(generalTerm, acceptType, `a non-plain object value of type ${e}`)
         }
     }

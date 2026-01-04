@@ -10,12 +10,21 @@ export function makePropertyReadOnly(obj, name) {
     throwIfIsNotPlainObject(obj);
     throwIfKeyMissing(obj, name, "obj");
     const descriptor = Object.getOwnPropertyDescriptor(obj, name);
-    Object.defineProperty(obj, name, {
-        value: descriptor.value,
-        writable: false,
-        configurable: false,
-        enumerable: descriptor.enumerable ?? true
-    })
+    if ('value' in descriptor) {
+        Object.defineProperty(obj, name, {
+            value: descriptor.value,
+            writable: false,
+            configurable: false,
+            enumerable: descriptor.enumerable ?? true
+        });
+    } else {
+        Object.defineProperty(obj, name, {
+            get: descriptor.get,
+            set: undefined, 
+            configurable: false,
+            enumerable: descriptor.enumerable ?? true
+        });
+    }
 }
 
 /**

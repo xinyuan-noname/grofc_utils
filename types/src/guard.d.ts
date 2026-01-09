@@ -1,16 +1,16 @@
 /**
- * 检查变量是否为 null 或 undefined
- * @param {*} variable - 需要检查的变量
- * @returns {boolean} 如果变量为 null 或 undefined 返回 true，否则返回 false
- */
-export function isNullishValue(variable: any): boolean;
-/**
  * 检查变量是否为可比较的数字（不是 NaN）
  * @param {*} variable - 需要检查的变量
  * @returns {boolean} 如果变量是数字且不是 NaN 返回 true，否则返回 false
  */
 export function isComparableNumber(variable: any): boolean;
 export function isDivisibleNumber(variable: any): boolean;
+/**
+ * 检查变量是否为 null 或 undefined
+ * @param {*} variable - 需要检查的变量
+ * @returns {boolean} 如果变量为 null 或 undefined 返回 true，否则返回 false
+ */
+export function isNullishValue(variable: any): boolean;
 /**
  * 检查给定对象是否为普通对象
  * 普通对象是指通过对象字面量 {} 或 new Object() 创建的对象，

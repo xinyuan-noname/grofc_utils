@@ -4,7 +4,6 @@
  * @returns {string} 变量的类型字符串
  */
 const getType = v => v === null ? "null" : typeof v
-
 class GuardError extends Error {
     /**
      * 
@@ -49,15 +48,9 @@ const throwRangeErrorGiveValue = (variable, name = "variable", ...acceptableRang
     if (acceptableRangeDescs.length === 1) throw RangeError(`Expected ${name} to be ${acceptableRangeDescs}, but got ${variable}.`)
     else if (acceptableRangeDescs.length > 1) throw RangeError(`Expected ${name} to be ${acceptableRangeDescs.slice(0, -1).join(" ,")} or ${acceptableRangeDescs[acceptableRangeDescs.length - 1]}, but got ${variable}.`)
 }
-/**
- * 检查变量是否为 null 或 undefined
- * @param {*} variable - 需要检查的变量
- * @returns {boolean} 如果变量为 null 或 undefined 返回 true，否则返回 false
- */
-export function isNullishValue(variable) {
-    return variable == null
-}
-
+// ------------------------------------------------
+// 数字判断函数
+// ------------------------------------------------
 /**
  * 检查变量是否为可比较的数字（不是 NaN）
  * @param {*} variable - 需要检查的变量
@@ -69,6 +62,18 @@ export function isComparableNumber(variable) {
 export function isDivisibleNumber(variable) {
     return typeof variable === "number" && Number.isFinite(variable) && variable !== 0
 }
+// ------------------------------------------------
+// 类型判断函数
+// ------------------------------------------------
+/**
+ * 检查变量是否为 null 或 undefined
+ * @param {*} variable - 需要检查的变量
+ * @returns {boolean} 如果变量为 null 或 undefined 返回 true，否则返回 false
+ */
+export function isNullishValue(variable) {
+    return variable == null
+}
+
 /**
  * 检查给定对象是否为普通对象
  * 普通对象是指通过对象字面量 {} 或 new Object() 创建的对象，

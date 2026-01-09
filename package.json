@@ -12,42 +12,56 @@
   "exports": {
     ".": {
       "import": "./index.js",
+      "require": "./cjs/index.js",
       "types": "./types/index.d.ts"
     },
     "./array": {
       "import": "./src/array.js",
+      "require": "./cjs/array.js",
       "types": "./types/src/array.d.ts"
     },
     "./guard": {
       "import": "./src/guard.js",
+      "require": "./cjs/guard.js",
       "types": "./types/src/guard.d.ts"
     },
     "./missingData": {
       "import": "./src/missingData.js",
+      "require": "./cjs/missingData.js",
       "types": "./types/src/missingData.d.ts"
     },
     "./number": {
       "import": "./src/number.js",
+      "require": "./cjs/number.js",
       "types": "./types/src/number.d.ts"
     },
     "./object": {
       "import": "./src/object.js",
+      "require": "./cjs/object.js",
       "types": "./types/src/object.d.ts"
     },
     "./random": {
       "import": "./src/random.js",
+      "require": "./cjs/random.js",
       "types": "./types/src/random.d.ts"
     },
     "./string": {
       "import": "./src/string.js",
+      "require": "./cjs/string.js",
       "types": "./types/src/string.d.ts"
+    },
+    "./validation": {
+      "import": "./src/validation.js",
+      "require": "./cjs/validation.js",
+      "types": "./types/src/validation.d.ts"
     }
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/plugin-transform-modules-commonjs": "^7.27.1",
     "@eslint/js": "^9.39.1",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",

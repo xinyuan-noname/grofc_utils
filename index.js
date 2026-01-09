@@ -5,3 +5,4 @@ export * from './src/number.js';
 export * from './src/object.js';
 export * from './src/random.js';
 export * from './src/string.js';
+export * from './src/validation.js';

@@ -11,6 +11,7 @@ exports.isRegExp = isRegExp;
 exports.throwIfAllKeysMissing = throwIfAllKeysMissing;
 exports.throwIfAllOwnPropertiesMissing = throwIfAllOwnPropertiesMissing;
 exports.throwIfIsFalsyValue = throwIfIsFalsyValue;
+exports.throwIfIsInvalidDate = throwIfIsInvalidDate;
 exports.throwIfIsNotArray = throwIfIsNotArray;
 exports.throwIfIsNotBigInt = throwIfIsNotBigInt;
 exports.throwIfIsNotBigIntArray = throwIfIsNotBigIntArray;
@@ -55,12 +56,7 @@ exports.throwIfKeyMissing = throwIfKeyMissing;
 exports.throwIfOwnPropertyMissing = throwIfOwnPropertyMissing;
 exports.throwIfSomeKeysMissing = throwIfSomeKeysMissing;
 exports.throwIfSomeOwnPropertiesMissing = throwIfSomeOwnPropertiesMissing;
-/**
- * 获取变量的类型字符串表示
- * @param {*} v - 要检查类型的变量
- * @returns {string} 变量的类型字符串
- */
-const getType = v => v === null ? "null" : typeof v;
+var _type = require("./type");
 class GuardError extends Error {
   /**
    * 
@@ -86,7 +82,7 @@ const safeGuardExecute = (guardFunc, ...args) => {
   }
 };
 const throwTypeErrorGiveType = (variable, name = "variable", ...acceptableTypeDescs) => {
-  if (acceptableTypeDescs.length === 1) throw TypeError(`Expected ${name} to be ${acceptableTypeDescs}, but got ${getType(variable)}.`);else if (acceptableTypeDescs.length > 1) throw TypeError(`Expected ${name} to be ${acceptableTypeDescs.slice(0, -1).join(" ,")} or ${acceptableTypeDescs[acceptableTypeDescs.length - 1]}, but got ${getType(variable)}.`);
+  if (acceptableTypeDescs.length === 1) throw TypeError(`Expected ${name} to be ${acceptableTypeDescs}, but got ${(0, _type.getType)(variable)}.`);else if (acceptableTypeDescs.length > 1) throw TypeError(`Expected ${name} to be ${acceptableTypeDescs.slice(0, -1).join(" ,")} or ${acceptableTypeDescs[acceptableTypeDescs.length - 1]}, but got ${(0, _type.getType)(variable)}.`);
 };
 const throwTypeErrorGiveValue = (variable, name = "variable", ...acceptableValueDescs) => {
   if (acceptableValueDescs.length === 1) throw TypeError(`Expected ${name} to be ${acceptableValueDescs}, but got ${variable}.`);else if (acceptableValueDescs.length > 1) throw TypeError(`Expected ${name} to be ${acceptableValueDescs.slice(0, -1).join(" ,")} or ${acceptableValueDescs[acceptableValueDescs.length - 1]}, but got ${variable}.`);
@@ -217,7 +213,9 @@ function throwIfIsNotNumber(variable, name = "variable") {
  * @throws {TypeError} 当变量是 NaN 时抛出类型错误
  */
 function throwIfIsNotComparableNumber(variable, name = "variable") {
-  throwIfIsNotNumber(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
   if (Number.isNaN(variable)) {
     throwTypeErrorGiveValue(variable, name, "comparable number(not NaN)");
   }
@@ -230,13 +228,20 @@ const throwIfIsNotNumberOrIsNaN = exports.throwIfIsNotNumberOrIsNaN = throwIfIsN
  * @throws {TypeError} 当变量不是有限数字时抛出类型错误
  */
 function throwIfIsNotFiniteNumber(variable, name = "variable") {
-  throwIfIsNotNumber(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
   if (!Number.isFinite(variable)) {
     throwTypeErrorGiveValue(variable, name, "a finite number");
   }
 }
 function throwIfIsNotDivisibleNumber(variable, name = "variable") {
-  throwIfIsNotFiniteNumber(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
+  if (!Number.isFinite(variable)) {
+    throwTypeErrorGiveValue(variable, name, "a divisible number");
+  }
   if (variable === 0) {
     throwRangeErrorGiveValue(variable, name, "a divisible number");
   }
@@ -248,7 +253,12 @@ function throwIfIsNotDivisibleNumber(variable, name = "variable") {
  * @throws {RangeError} 当变量不是正有限数时抛出范围错误
  */
 function throwIfIsNotPositiveFiniteNumber(variable, name = "variable") {
-  throwIfIsNotFiniteNumber(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
+  if (!Number.isFinite(variable)) {
+    throwTypeErrorGiveValue(variable, name, "a postive finite number");
+  }
   if (variable <= 0) {
     throwRangeErrorGiveValue(variable, name, "a positive finite number");
   }
@@ -261,7 +271,12 @@ function throwIfIsNotPositiveFiniteNumber(variable, name = "variable") {
  * @throws {RangeError} 当变量不是负有限数时抛出范围错误
  */
 function throwIfIsNotNegativeFiniteNumber(variable, name = "variable") {
-  throwIfIsNotFiniteNumber(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
+  if (!Number.isFinite(variable)) {
+    throwTypeErrorGiveValue(variable, name, "a negative finite number");
+  }
   if (variable >= 0) {
     throwRangeErrorGiveValue(variable, name, "a negative finite number");
   }
@@ -274,7 +289,12 @@ function throwIfIsNotNegativeFiniteNumber(variable, name = "variable") {
  * @throws {RangeError} 当变量不是非负有限数时抛出范围错误
  */
 function throwIfIsNotNonNegativeFiniteNumber(variable, name = "variable") {
-  throwIfIsNotFiniteNumber(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
+  if (!Number.isFinite(variable)) {
+    throwTypeErrorGiveValue(variable, name, "a non-negative finite number");
+  }
   if (variable < 0) {
     throwRangeErrorGiveValue(variable, name, "a non-negative finite number");
   }
@@ -287,7 +307,9 @@ function throwIfIsNotNonNegativeFiniteNumber(variable, name = "variable") {
  * @throws {TypeError} 当变量不是整数时抛出类型错误
  */
 function throwIfIsNotInteger(variable, name = "variable") {
-  throwIfIsNotNumber(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
   if (!Number.isInteger(variable)) {
     throwTypeErrorGiveValue(variable, name, "an integer");
   }
@@ -300,7 +322,12 @@ function throwIfIsNotInteger(variable, name = "variable") {
  * @throws {RangeError} 当变量不是正整数时抛出范围错误
  */
 function throwIfIsNotPositiveInteger(variable, name = "variable") {
-  throwIfIsNotInteger(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
+  if (!Number.isInteger(variable)) {
+    throwTypeErrorGiveValue(variable, name, "a positive integer");
+  }
   if (variable <= 0) {
     throwRangeErrorGiveValue(variable, name, "a positive integer");
   }
@@ -313,7 +340,12 @@ function throwIfIsNotPositiveInteger(variable, name = "variable") {
  * @throws {RangeError} 当变量不是负整数时抛出范围错误
  */
 function throwIfIsNotNegativeInteger(variable, name = "variable") {
-  throwIfIsNotInteger(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
+  if (!Number.isInteger(variable)) {
+    throwTypeErrorGiveValue(variable, name, "a negative integer");
+  }
   if (variable >= 0) {
     throwRangeErrorGiveValue(variable, name, "a negative integer");
   }
@@ -326,7 +358,12 @@ function throwIfIsNotNegativeInteger(variable, name = "variable") {
  * @throws {RangeError} 当变量不是非负整数时抛出范围错误
  */
 function throwIfIsNotNonNegativeInteger(variable, name = "variable") {
-  throwIfIsNotInteger(variable, name);
+  if (typeof variable !== "number") {
+    throwTypeErrorGiveType(variable, name, "a number");
+  }
+  if (!Number.isInteger(variable)) {
+    throwTypeErrorGiveValue(variable, name, "a non-negative integer");
+  }
   if (variable < 0) {
     throwRangeErrorGiveValue(variable, name, "a non-negative integer");
   }
@@ -379,7 +416,9 @@ function throwIfIsNotPlainObject(variable, name = "variable") {
  * @throws {Error} 当对象中找不到指定键时抛出错误
  */
 function throwIfKeyMissing(variable, key, name = "variable") {
-  throwIfIsNotPlainObject(variable);
+  if (!isPlainObject(variable)) {
+    throwTypeErrorGiveType(variable, name, "a plain object");
+  }
   throwIfIsNotString(key);
   if (!(key in variable)) {
     throw new Error(`Expected ${name} to have key : "${key}", but cannot find.`);
@@ -395,7 +434,9 @@ function throwIfKeyMissing(variable, key, name = "variable") {
  * @throws {Error} 当对象缺少所有指定键时抛出错误
  */
 function throwIfAllKeysMissing(variable, keys, name = "variable") {
-  throwIfIsNotPlainObject(variable);
+  if (!isPlainObject(variable)) {
+    throwTypeErrorGiveType(variable, name, "a plain object");
+  }
   safeGuardExecute(throwIfIsNotStringArray, keys, name, "an array of string");
   if (keys.every(key => !(key in variable))) {
     throw new Error(`Expected ${name} to have at least one keys of [${keys.map(k => `'${k}'`).join(" ,")}], but cannot find.`);
@@ -411,7 +452,9 @@ function throwIfAllKeysMissing(variable, keys, name = "variable") {
  * @throws {Error} 当对象缺少任何一个指定键时抛出错误
  */
 function throwIfSomeKeysMissing(variable, keys, name = "variable") {
-  throwIfIsNotPlainObject(variable);
+  if (!isPlainObject(variable)) {
+    throwTypeErrorGiveType(variable, name, "a plain object");
+  }
   safeGuardExecute(throwIfIsNotStringArray, keys, name, "an array of string");
   const l = keys.filter(key => !(key in variable));
   if (l.length) {
@@ -427,7 +470,9 @@ function throwIfSomeKeysMissing(variable, keys, name = "variable") {
  * @throws {Error} 当对象中找不到指定键时抛出错误
  */
 function throwIfOwnPropertyMissing(variable, property, name = "variable") {
-  throwIfIsNotPlainObject(variable);
+  if (!isPlainObject(variable)) {
+    throwTypeErrorGiveType(variable, name, "a plain object");
+  }
   throwIfIsNotString(property);
   if (Object.hasOwn(variable, property)) {
     throw new Error(`Expected ${name} to have own property : "${property}", but cannot find.`);
@@ -443,7 +488,9 @@ function throwIfOwnPropertyMissing(variable, property, name = "variable") {
  * @throws {Error} 当对象缺少所有指定键时抛出错误
  */
 function throwIfAllOwnPropertiesMissing(variable, properties, name = "variable") {
-  throwIfIsNotPlainObject(variable);
+  if (!isPlainObject(variable)) {
+    throwTypeErrorGiveType(variable, name, "a plain object");
+  }
   safeGuardExecute(throwIfIsNotStringArray, properties, name, "an array of string");
   if (properties.every(p => !Object.hasOwn(variable, p))) {
     throw new Error(`Expected ${name} to have at least one own property of [${properties.map(k => `'${k}'`).join(" ,")}], but cannot find.`);
@@ -459,11 +506,29 @@ function throwIfAllOwnPropertiesMissing(variable, properties, name = "variable")
  * @throws {Error} 当对象缺少任何一个指定键时抛出错误
  */
 function throwIfSomeOwnPropertiesMissing(variable, properties, name = "variable") {
-  throwIfIsNotPlainObject(variable);
+  if (!isPlainObject(variable)) {
+    throwTypeErrorGiveType(variable, name, "a plain object");
+  }
   safeGuardExecute(throwIfIsNotStringArray, properties, name, "an array of string");
   const l = properties.filter(p => !Object.hasOwn(variable, p));
   if (l.length) {
     throw new Error(`Expected ${name} to have at all own properties of [${properties.map(k => `'${k}'`).join(" ,")}], but missing [${l.map(k => `'${k}'`).join(" ,")}].`);
+  }
+}
+// ------------------------------------------------
+// 日期类型守卫函数
+// ------------------------------------------------
+/**
+ * 
+ * @param {*} variable 
+ * @param {string} name 
+ */
+function throwIfIsInvalidDate(variable, name) {
+  if (variable instanceof Date) {
+    throwTypeErrorGiveType(variable, name, "a valid date");
+  }
+  if (Number.isNaN(variable.getTime())) {
+    throwTypeErrorForUnexpectedValue(variable, name, "a valid date");
   }
 }
 // ------------------------------------------------
@@ -529,7 +594,9 @@ function throwIfIsNotArray(variable, name = "variable") {
  * @throws {Error} 当变量是空数组时抛出错误
  */
 function throwIfIsNotNonEmptyArray(variable, name = "variable") {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   if (variable.length === 0) {
     throw new Error(`Expected ${name} to have at least one item, but got zero.`);
   }
@@ -543,11 +610,13 @@ function throwIfIsNotNonEmptyArray(variable, name = "variable") {
  * @throws {TypeError} 当变量不是数组或包含非字符串元素时抛出类型错误
  */
 function throwIfIsNotStringArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "strings";
   for (const e of variable) {
     if (typeof e !== "string") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-string value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-string value of type ${(0, _type.getType)(e)}`);
     }
   }
 }
@@ -559,11 +628,13 @@ function throwIfIsNotStringArray(variable, name = "variable", generalTerm = `all
  * @throws {TypeError} 当变量不是数组或包含非BigInt元素时抛出类型错误
  */
 function throwIfIsNotBigIntArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "bigints";
   for (const e of variable) {
     if (typeof e !== "bigint") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-bigint value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-bigint value of type ${(0, _type.getType)(e)}`);
     }
   }
 }
@@ -575,11 +646,13 @@ function throwIfIsNotBigIntArray(variable, name = "variable", generalTerm = `all
  * @throws {TypeError} 当变量不是数组或包含非Symbol元素时抛出类型错误
  */
 function throwIfIsNotSymbolArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "symbols";
   for (const e of variable) {
     if (typeof e !== "symbol") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-symbol value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-symbol value of type ${(0, _type.getType)(e)}`);
     }
   }
 }
@@ -591,7 +664,9 @@ function throwIfIsNotSymbolArray(variable, name = "variable", generalTerm = `all
  * @throws {TypeError} 当变量不是数组或包含非普通对象元素时抛出类型错误
  */
 function throwIfIsNotPlainObjectArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "plain objects";
   for (const e of variable) {
     if (!isPlainObject(variable)) {
@@ -600,11 +675,13 @@ function throwIfIsNotPlainObjectArray(variable, name = "variable", generalTerm =
   }
 }
 function throwIfIsNotNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "numbers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
   }
 }
@@ -617,12 +694,14 @@ function throwIfIsNotNumberArray(variable, name = "variable", generalTerm = `all
  * @throws {TypeError} 当变量不是数组或数组元素不符合要求时抛出错误
  */
 function throwIfIsNotComparableNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "comparable numbers(not NaN)";
   // 验证数组中的每个元素都是非NaN的数字
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");
@@ -639,11 +718,13 @@ const throwIfIsNumberArrayWithoutNaN = exports.throwIfIsNumberArrayWithoutNaN = 
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、-Infinity
  */
 function throwIfIsNotFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "finite numbers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");
@@ -655,11 +736,13 @@ function throwIfIsNotFiniteNumberArray(variable, name = "variable", generalTerm 
   }
 }
 function throwIfIsNotDivisibleNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "disvisible numbers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");
@@ -682,11 +765,13 @@ function throwIfIsNotDivisibleNumberArray(variable, name = "variable", generalTe
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、零
  */
 function throwIfIsNotPositiveFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "positive finite numbers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");
@@ -710,11 +795,13 @@ function throwIfIsNotPositiveFiniteNumberArray(variable, name = "variable", gene
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数
  */
 function throwIfIsNotNonNegativeFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "non-negative finite numbers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");
@@ -738,11 +825,13 @@ function throwIfIsNotNonNegativeFiniteNumberArray(variable, name = "variable", g
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、正数、零
  */
 function throwIfIsNotNegativeFiniteNumberArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "negative finite numbers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");
@@ -766,11 +855,13 @@ function throwIfIsNotNegativeFiniteNumberArray(variable, name = "variable", gene
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、小数
  */
 function throwIfIsNotIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "integers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");
@@ -793,11 +884,13 @@ function throwIfIsNotIntegerArray(variable, name = "variable", generalTerm = `al
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、零、小数
  */
 function throwIfIsNotPositiveIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "positive integers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");
@@ -824,11 +917,13 @@ function throwIfIsNotPositiveIntegerArray(variable, name = "variable", generalTe
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、负数、小数
  */
 function throwIfIsNotNonNegativeIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "non-negative integers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");
@@ -855,11 +950,13 @@ function throwIfIsNotNonNegativeIntegerArray(variable, name = "variable", genera
  * @throws {TypeError} 若 variable 不是数组，或包含非数字、NaN、Infinity、正数、零、小数
  */
 function throwIfIsNotNegativeIntegerArray(variable, name = "variable", generalTerm = `all elements of ${name || "array"}`) {
-  throwIfIsNotArray(variable, name);
+  if (!Array.isArray(variable)) {
+    throwTypeErrorGiveType(variable, name, "an array");
+  }
   const acceptType = "negative integers";
   for (const e of variable) {
     if (typeof e !== "number") {
-      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${getType(e)}`);
+      throwTypeErrorForArray(generalTerm, acceptType, `a non-number value of type ${(0, _type.getType)(e)}`);
     }
     if (Number.isNaN(e)) {
       throwTypeErrorForArray(generalTerm, acceptType, "NaN");

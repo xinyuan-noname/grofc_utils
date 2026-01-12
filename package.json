@@ -50,6 +50,16 @@
       "require": "./cjs/string.js",
       "types": "./types/src/string.d.ts"
     },
+    "./time": {
+      "import": "./src/time.js",
+      "require": "./cjs/time.js",
+      "types": "./types/src/time.d.ts"
+    },
+    "./type": {
+      "import": "./src/type.js",
+      "require": "./cjs/type.js",
+      "types": "./types/src/type.d.ts"
+    },
     "./validation": {
       "import": "./src/validation.js",
       "require": "./cjs/validation.js",

@@ -190,6 +190,12 @@ export function throwIfAllOwnPropertiesMissing(variable: any, properties: any, n
  */
 export function throwIfSomeOwnPropertiesMissing(variable: any, properties: string[], name?: string): void;
 /**
+ *
+ * @param {*} variable
+ * @param {string} name
+ */
+export function throwIfIsInvalidDate(variable: any, name: string): void;
+/**
  * 检查变量是否为函数类型，如果不是则抛出类型错误
  * @param {*} variable - 要检查的变量
  * @param {string} name - 变量名称（用于错误消息），默认值为"variable"

@@ -119,3 +119,5 @@ public/
 
 # Windows files
 Thumbs.db
+
+.npmrc

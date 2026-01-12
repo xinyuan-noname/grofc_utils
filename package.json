@@ -1,69 +1,69 @@
 {
   "name": "grofc_utils",
-  "version": "1.6.4",
+  "version": "1.6.5-alpha.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build:type": "tsc -p tsconfig.json",
-    "generate:exports": "node generate.exports.js",
+    "generate:exports": "node build.js",
     "dev": "nodemon --watch src --exec \"npm run build:type & npm run generate:exports\""
   },
   "types": "./types/index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.js",
-      "require": "./cjs/index.js",
-      "types": "./types/index.d.ts"
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
     },
     "./array": {
-      "import": "./src/array.js",
-      "require": "./cjs/array.js",
-      "types": "./types/src/array.d.ts"
+      "import": "./dist/esm/array.js",
+      "require": "./dist/cjs/array.js",
+      "types": "./dist/types/array.d.ts"
     },
     "./guard": {
-      "import": "./src/guard.js",
-      "require": "./cjs/guard.js",
-      "types": "./types/src/guard.d.ts"
+      "import": "./dist/esm/guard.js",
+      "require": "./dist/cjs/guard.js",
+      "types": "./dist/types/guard.d.ts"
     },
     "./missingData": {
-      "import": "./src/missingData.js",
-      "require": "./cjs/missingData.js",
-      "types": "./types/src/missingData.d.ts"
+      "import": "./dist/esm/missingData.js",
+      "require": "./dist/cjs/missingData.js",
+      "types": "./dist/types/missingData.d.ts"
     },
     "./number": {
-      "import": "./src/number.js",
-      "require": "./cjs/number.js",
-      "types": "./types/src/number.d.ts"
+      "import": "./dist/esm/number.js",
+      "require": "./dist/cjs/number.js",
+      "types": "./dist/types/number.d.ts"
     },
     "./object": {
-      "import": "./src/object.js",
-      "require": "./cjs/object.js",
-      "types": "./types/src/object.d.ts"
+      "import": "./dist/esm/object.js",
+      "require": "./dist/cjs/object.js",
+      "types": "./dist/types/object.d.ts"
     },
     "./random": {
-      "import": "./src/random.js",
-      "require": "./cjs/random.js",
-      "types": "./types/src/random.d.ts"
+      "import": "./dist/esm/random.js",
+      "require": "./dist/cjs/random.js",
+      "types": "./dist/types/random.d.ts"
     },
     "./string": {
-      "import": "./src/string.js",
-      "require": "./cjs/string.js",
-      "types": "./types/src/string.d.ts"
+      "import": "./dist/esm/string.js",
+      "require": "./dist/cjs/string.js",
+      "types": "./dist/types/string.d.ts"
     },
     "./time": {
-      "import": "./src/time.js",
-      "require": "./cjs/time.js",
-      "types": "./types/src/time.d.ts"
+      "import": "./dist/esm/time.js",
+      "require": "./dist/cjs/time.js",
+      "types": "./dist/types/time.d.ts"
     },
     "./type": {
-      "import": "./src/type.js",
-      "require": "./cjs/type.js",
-      "types": "./types/src/type.d.ts"
+      "import": "./dist/esm/type.js",
+      "require": "./dist/cjs/type.js",
+      "types": "./dist/types/type.d.ts"
     },
     "./validation": {
-      "import": "./src/validation.js",
-      "require": "./cjs/validation.js",
-      "types": "./types/src/validation.d.ts"
+      "import": "./dist/esm/validation.js",
+      "require": "./dist/cjs/validation.js",
+      "types": "./dist/types/validation.d.ts"
     }
   },
   "keywords": [],
@@ -79,8 +79,6 @@
     "vitest": "^4.0.6"
   },
   "files": [
-    "index.js",
-    "/src",
-    "/types"
+    "dist"
   ]
 }

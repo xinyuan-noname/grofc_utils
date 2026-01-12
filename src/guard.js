@@ -501,9 +501,10 @@ export function throwIfIsNotDate(variable, name) {
  * @param {string} name 
  */
 export function throwIfIsInvalidDate(variable, name) {
-    if (variable instanceof Date) {
+    if (!(variable instanceof Date)) {
         throwTypeErrorGiveType(variable, name, "a valid date")
     }
+    console.log(variable.getTime())
     if (Number.isNaN(variable.getTime())) {
         throwTypeErrorForUnexpectedValue(variable, name, "a valid date")
     }

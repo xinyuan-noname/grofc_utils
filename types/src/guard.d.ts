@@ -121,6 +121,13 @@ export function throwIfIsNotNegativeInteger(variable: any, name?: string): void;
  * @throws {RangeError} 当变量不是非负整数时抛出范围错误
  */
 export function throwIfIsNotNonNegativeInteger(variable: any, name?: string): void;
+/**
+ * 检查传入的变量是否为字符串类型，如果不是则抛出类型错误
+ *
+ * @param {*} variable - 要检查类型的变量
+ * @param {string} [name="variable"] - 变量的名称，默认为"variable"
+ * @throws {Error} 如果variable不是字符串类型，则会调用throwTypeErrorGiveType函数抛出错误
+ */
 export function throwIfIsNotString(variable: any, name?: string): void;
 export function throwIfIsNotSymbol(variable: any, name?: string): void;
 export function throwIfIsNotBigInt(variable: any, name?: string): void;
@@ -189,6 +196,18 @@ export function throwIfAllOwnPropertiesMissing(variable: any, properties: any, n
  * @throws {Error} 当对象缺少任何一个指定键时抛出错误
  */
 export function throwIfSomeOwnPropertiesMissing(variable: any, properties: string[], name?: string): void;
+/**
+ *
+ * @param {*} variable
+ * @param {string} name
+ */
+export function throwIfIsNotRegExp(variable: any, name: string): void;
+/**
+ *
+ * @param {*} variable
+ * @param {string} name
+ */
+export function throwIfIsNotDate(variable: any, name: string): void;
 /**
  *
  * @param {*} variable

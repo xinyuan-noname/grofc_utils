@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.chunkString = chunkString;
+var _guard = require("./guard");
 /**
  * 将字符串按照指定步长进行分块处理
  * @param {string} input - 需要分块的输入字符串
@@ -13,9 +14,8 @@ exports.chunkString = chunkString;
  * @throws {RangeError} 当step为0时抛出
  */
 function chunkString(input, step) {
-  if (typeof input !== "string") throw new TypeError(`${input} must be string.`);
-  if (!Number.isInteger(step)) throw new TypeError(`${step} must be an integer.`);
-  if (step === 0) throw new RangeError(`step must not be zero.`);
+  (0, _guard.throwIfIsNotString)(input);
+  (0, _guard.throwIfIsNotDivisibleNumber)(step);
   const result = [];
   if (step > 0) {
     for (let i = 0; i < input.length; i += step) {

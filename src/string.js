@@ -1,3 +1,5 @@
+import { throwIfIsNotDivisibleNumber, throwIfIsNotString } from "./guard";
+
 /**
  * 将字符串按照指定步长进行分块处理
  * @param {string} input - 需要分块的输入字符串
@@ -7,9 +9,8 @@
  * @throws {RangeError} 当step为0时抛出
  */
 export function chunkString(input, step) {
-    if (typeof input !== "string") throw new TypeError(`${input} must be string.`);
-    if (!Number.isInteger(step)) throw new TypeError(`${step} must be an integer.`);
-    if (step === 0) throw new RangeError(`step must not be zero.`);
+    throwIfIsNotString(input)
+    throwIfIsNotDivisibleNumber(step)
     const result = []; 
     if (step > 0) {
         for (let i = 0; i < input.length; i += step) {

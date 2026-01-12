@@ -85,7 +85,6 @@ export function isPlainObject(variable) {
 export function isRegExp(variable) {
     return Object.prototype.toString.call(variable) === "[object RegExp]"
 }
-
 // ------------------------------------------------
 // 值校验守卫函数
 // ------------------------------------------------
@@ -318,6 +317,14 @@ export function throwIfIsNotNonNegativeInteger(variable, name = "variable") {
 //
 // 字符串类型守卫函数
 //
+
+/**
+ * 检查传入的变量是否为字符串类型，如果不是则抛出类型错误
+ * 
+ * @param {*} variable - 要检查类型的变量
+ * @param {string} [name="variable"] - 变量的名称，默认为"variable"
+ * @throws {Error} 如果variable不是字符串类型，则会调用throwTypeErrorGiveType函数抛出错误
+ */
 export function throwIfIsNotString(variable, name = "variable") {
     if (typeof variable !== "string") {
         throwTypeErrorGiveType(variable, name, "string")
@@ -463,8 +470,31 @@ export function throwIfSomeOwnPropertiesMissing(variable, properties, name = "va
     }
 }
 // ------------------------------------------------
+// 正则类型守卫函数
+// ------------------------------------------------
+/**
+ * 
+ * @param {*} variable 
+ * @param {string} name 
+ */
+export function throwIfIsNotRegExp(variable, name) {
+    if (variable instanceof RegExp) {
+        throwTypeErrorGiveType(variable, name, "a regexp")
+    }
+}
+// ------------------------------------------------
 // 日期类型守卫函数
 // ------------------------------------------------
+/**
+ * 
+ * @param {*} variable 
+ * @param {string} name 
+ */
+export function throwIfIsNotDate(variable, name) {
+    if (variable instanceof Date) {
+        throwTypeErrorGiveType(variable, name, "a date")
+    }
+}
 /**
  * 
  * @param {*} variable 

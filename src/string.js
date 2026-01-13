@@ -1,4 +1,4 @@
-import { throwIfIsNotDivisibleNumber, throwIfIsNotString } from "./guard";
+import { throwIfIsNotDivisibleNumber, throwIfIsNotString } from "./guard.js";
 
 /**
  * 将字符串按照指定步长进行分块处理
@@ -22,4 +22,10 @@ export function chunkString(input, step) {
         }
     }
     return result;
+}
+export function upperFirstCase(str){
+    if (typeof str !== 'string' || str.length === 0) {
+        return str; // 或返回 ''，根据需求
+    }
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }

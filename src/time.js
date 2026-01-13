@@ -1,4 +1,4 @@
-import { throwIfIsInvalidDate, throwIfIsNotPositiveFiniteNumber, throwIfIsNotString } from "./guard";
+import { throwIfIsInvalidDate, throwIfIsNotPositiveFiniteNumber, throwIfIsNotString } from "./guard.js";
 
 /**
  * 
@@ -17,6 +17,7 @@ export function isExpired(time, expire) {
     throwIfIsInvalidDate(time, "time")
     const now = new Date();
     const delta = now.getTime() - time.getTime();
+    console.log(delta/1000);
     switch (unit) {
         case "ms": return delta > tolerance;
         case "s": return delta > tolerance * 1_000;
